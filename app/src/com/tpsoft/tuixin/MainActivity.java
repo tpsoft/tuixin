@@ -20,6 +20,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -43,6 +44,8 @@ public class MainActivity extends Activity {
 	public static final String MY_CLASSNAME = "com.tpsoft.tuixin.MainActivity";
 	public static final String MESSAGE_DIALOG_CLASSNAME = "com.tpsoft.tuixin.MessageDialog";
 
+	public static final String TAG_APILOG = "API LOG";
+
 	private class MyBroadcastReceiver extends BroadcastReceiver {
 
 		@Override
@@ -54,20 +57,19 @@ public class MainActivity extends Activity {
 					showNotification(intent.getStringExtra("msgText"));
 				} else if (action.equals("log")) {
 					// 处理日志
-					Toast.makeText(MainActivity.this,
-							intent.getStringExtra("logText"),
-							Toast.LENGTH_SHORT).show();
+					Log.i(TAG_APILOG, intent.getStringExtra("logText"));
 				} else if (action.equals("status")) {
 					// 响应消息接收器状态变化
 					boolean receiverStarted = intent.getBooleanExtra("started",
 							false);
 					MyApplicationClass.clientStarted = receiverStarted;
 					//
-					Toast.makeText(
-							MainActivity.this,
-							receiverStarted ? R.string.receiver_started
-									: R.string.receiver_stopped,
-							Toast.LENGTH_SHORT).show();
+					int resId = (receiverStarted ? R.string.receiver_started
+							: R.string.receiver_stopped);
+					String log = MainActivity.this.getText(resId).toString();
+					Log.i(TAG_APILOG, log);
+					Toast.makeText(MainActivity.this, log, Toast.LENGTH_SHORT)
+							.show();
 				} else if (action.equals("logining")) {
 					// 响应登录状态变化
 					boolean logining = intent

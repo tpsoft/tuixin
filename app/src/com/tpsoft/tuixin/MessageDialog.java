@@ -11,6 +11,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Bitmap;
@@ -30,10 +31,9 @@ import android.view.WindowManager;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import com.tpsoft.tuixin.R;
 
 public class MessageDialog extends Activity implements OnTouchListener,
 		OnGestureListener {
@@ -60,17 +60,39 @@ public class MessageDialog extends Activity implements OnTouchListener,
 								.findViewById(R.id.message);
 						popupLayout.setOnTouchListener(MessageDialog.this);
 						popupLayout.setLongClickable(true);
+						//
+						LinearLayout msgContainer = (LinearLayout)notifyView.findViewById(R.id.msgContainer);
+						msgContainer.setOnTouchListener(MessageDialog.this);
+						//
+						RelativeLayout msgTitleBar = (RelativeLayout)notifyView.findViewById(R.id.msgTitleBar);
+						msgTitleBar.setOnTouchListener(MessageDialog.this);
+						//
+						TextView msgIndex = (TextView)notifyView.findViewById(R.id.msgIndex);
+						msgIndex.setOnTouchListener(MessageDialog.this);
+						//
+						TextView msgTitle = (TextView)notifyView.findViewById(R.id.msgTitle);
+						msgTitle.setOnTouchListener(MessageDialog.this);
+						//
+						TextView msgBody = (TextView)notifyView.findViewById(R.id.msgBody);
+						msgBody.setOnTouchListener(MessageDialog.this);
+						//
+						ImageView msgAttachment = (ImageView)notifyView.findViewById(R.id.msgAttachment);
+						msgAttachment.setOnTouchListener(MessageDialog.this);
+						//
+						TextView msgUrl = (TextView)notifyView.findViewById(R.id.msgUrl);
+						msgUrl.setOnTouchListener(MessageDialog.this);
 					}
 				}
 			}
 		}
 	}
 
-	private static final int POPUP_INFO_TIME = 1000 * 30;
-	private static final int POPUP_ALERT_TIME = 1000 * 40;
+	private static final int POPUP_INFO_TIME = 1000 * 50;
+	private static final int POPUP_ALERT_TIME = 1000 * 60;
 
 	private View notifyView;
 	private Timer autoCloseTimer;
+	private AlertDialog alertDialog;
 	private MyBroadcastReceiver myBroadcastReceiver = null;
 
 	private List<Bundle> msgBundles = new ArrayList<Bundle>();
@@ -193,10 +215,8 @@ public class MessageDialog extends Activity implements OnTouchListener,
 
 	private void showAlertDialog(Bundle msgBundle) {
 		AlertDialog.Builder builder;
-		final AlertDialog alertDialog;
 		builder = new AlertDialog.Builder(this);
 		builder.setView(notifyView);
-
 		alertDialog = builder.create();
 		alertDialog.setCanceledOnTouchOutside(false);
 		alertDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -209,11 +229,27 @@ public class MessageDialog extends Activity implements OnTouchListener,
 		} else {
 			alertDialogLayoutParams.gravity = Gravity.BOTTOM;
 		}
+		alertDialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
+			
+			@Override
+			public void onDismiss(DialogInterface dialog) {
+				// 取消定时器
+				autoCloseTimer.cancel();
+				// 关闭窗口
+				closeSelf();
+			}
+		});
+
 
 		autoCloseTimer = new Timer();
 		autoCloseTimer.schedule(new TimerTask() {
 			public void run() {
-				closeAlertDialog(alertDialog, autoCloseTimer);
+				// 关闭消息对话框
+				alertDialog.dismiss();
+				// 取消定时器
+				autoCloseTimer.cancel();
+				// 关闭窗口
+				closeSelf();
 			}
 
 		}, msgBundle.getBoolean("alert") ? POPUP_ALERT_TIME : POPUP_INFO_TIME);
@@ -224,20 +260,19 @@ public class MessageDialog extends Activity implements OnTouchListener,
 
 			@Override
 			public void onClick(View v) {
-				closeAlertDialog(alertDialog, autoCloseTimer);
+				// 关闭消息对话框
+				alertDialog.dismiss();
+				// 取消定时器
+				autoCloseTimer.cancel();
+				// 关闭窗口
+				closeSelf();
 			}
 		});
 
 		alertDialog.show();
 	}
 
-	private void closeAlertDialog(AlertDialog alertDialog, Timer t) {
-		// 关闭消息对话框
-		alertDialog.dismiss(); // when the task is active then close the dialog
-
-		// 取消定时器
-		t.cancel(); // also just top the timer thread, otherwise, you may
-					// receive a crash report
+	private void closeSelf() {
 		// 通知调用方当前活动已关闭
 		Intent i = new Intent();
 		i.setAction(MainActivity.MESSAGE_DIALOG_CLASSNAME);
