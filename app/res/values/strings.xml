@@ -8,6 +8,11 @@
     <string name="receiver_started">消息接收器已启动</string>
     <string name="receiver_stopped">消息接收器已停止</string>
         
+    <string name="settings">设置</string>
+    <string name="menu_start">启动</string>
+    <string name="menu_stop">停止</string>
+    <string name="menu_settings">设置</string>
+    
     <string name="service_started">服务已启动</string>
     <string name="service_stopped">服务已停止</string>
    
@@ -30,7 +35,7 @@
     <string name="msg_title">消息标题</string>
     <string name="msg_body">消息正文</string>
     <string name="msg_attachment">消息附件</string>   
-    <string name="msg_url">详情URL</string>
+    <string name="msg_details">详情</string>
     <string name="msg_time">消息时间</string>
     <string name="msg_first">已经是第一条消息了</string>
     <string name="msg_last">已经是最后一条消息了</string>
@@ -40,7 +45,9 @@
     <string name="ticker_text">正在启动推信……</string>
     <string name="notification_title">推信</string>
     <string name="notification_message">推信正在后台运行</string>
-
-    <string name="log_title">日志</string>
-    <string name="log"></string>
+    <string name="msg_receiver">接收者</string>
+    <string name="msg_content">消息内容</string>
+    <string name="msg_send">发送消息</string>
+    <string name="error_noreceiver">接收者不能为空</string>
+    <string name="error_nocontent">消息内容不能为空</string>
 </resources>

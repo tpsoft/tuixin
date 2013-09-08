@@ -6,11 +6,8 @@ import java.util.List;
 import java.util.Map;
 
 import android.app.Application;
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
-import android.os.Environment;
+import android.graphics.Bitmap;
 
 import com.tpsoft.pushnotification.model.MyMessage;
 import com.tpsoft.pushnotification.service.NotifyPushService;
@@ -31,14 +28,9 @@ public class MyApplicationClass extends Application {
 	public static PlaySoundPool playSoundPool;
 	public static UserSettings userSettings;
 
-	public static boolean mExternalStorageAvailable = false;
-	public static boolean mExternalStorageWriteable = false;
-
 	public static boolean clientStarted = false;
 	public static List<MyMessage> savedMsgs = new ArrayList<MyMessage>();
-	public static Map<String, String> savedImages = new HashMap<String, String>();
-
-	private BroadcastReceiver mExternalStorageReceiver;
+	public static Map<String, Bitmap> savedImages = new HashMap<String, Bitmap>();
 
 	@Override
 	public void onCreate() {
@@ -52,9 +44,6 @@ public class MyApplicationClass extends Application {
 		// 装入用户设置
 		loadUserSettings();
 
-		// 开始监视外部存储器状态
-		startWatchingExternalStorage();
-
 		// 启动后台服务
 		Intent intent = new Intent(this, NotifyPushService.class);
 		intent.putExtra("ActivityClassName", MainActivity.MY_CLASSNAME);
@@ -67,44 +56,8 @@ public class MyApplicationClass extends Application {
 
 	}
 
-	@Override
-	public void onTerminate() {
-		stopWatchingExternalStorage();
-
-		super.onTerminate();
-	}
-
 	public void loadUserSettings() {
 		userSettings = new UserSettings(this);
 	}
 
-	private void startWatchingExternalStorage() {
-		mExternalStorageReceiver = new BroadcastReceiver() {
-			@Override
-			public void onReceive(Context context, Intent intent) {
-				updateExternalStorageState();
-			}
-		};
-		IntentFilter filter = new IntentFilter();
-		filter.addAction(Intent.ACTION_MEDIA_MOUNTED);
-		filter.addAction(Intent.ACTION_MEDIA_REMOVED);
-		registerReceiver(mExternalStorageReceiver, filter);
-		updateExternalStorageState();
-	}
-
-	private void stopWatchingExternalStorage() {
-		unregisterReceiver(mExternalStorageReceiver);
-	}
-
-	private void updateExternalStorageState() {
-		String state = Environment.getExternalStorageState();
-		if (Environment.MEDIA_MOUNTED.equals(state)) {
-			mExternalStorageAvailable = mExternalStorageWriteable = true;
-		} else if (Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
-			mExternalStorageAvailable = true;
-			mExternalStorageWriteable = false;
-		} else {
-			mExternalStorageAvailable = mExternalStorageWriteable = false;
-		}
-	}
 }

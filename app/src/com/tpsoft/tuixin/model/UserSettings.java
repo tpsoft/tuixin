@@ -13,8 +13,8 @@ import android.telephony.TelephonyManager;
  */
 public class UserSettings {
 
-	public static final String DEFAULT_SERVER_HOST = "118.244.9.191"; // 默认服务地址
-	public static final int DEFAULT_SERVER_PORT = 3456; // 默认服务端口
+	public static final String DEFAULT_SERVER_HOST = "isajia.com"; // 默认服务地址
+	public static final int DEFAULT_SERVER_PORT = 1234; // 默认服务端口
 	private static final String DEFAULT_CLIENT_ID = "00000000000"; // 默认客户ID
 
 	private static final boolean DEFAULT_PLAY_SOUND = true; // 默认声音提醒状态

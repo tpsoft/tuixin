@@ -1,6 +1,7 @@
 package com.tpsoft.tuixin;
 
-import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
@@ -16,13 +17,15 @@ import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -31,6 +34,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.markupartist.android.widget.ActionBar;
+import com.markupartist.android.widget.ActionBar.Action;
 import com.markupartist.android.widget.ActionBar.IntentAction;
 import com.tpsoft.pushnotification.model.AppParams;
 import com.tpsoft.pushnotification.model.LoginParams;
@@ -44,7 +48,8 @@ public class MainActivity extends Activity {
 	public static final String MY_CLASSNAME = "com.tpsoft.tuixin.MainActivity";
 	public static final String MESSAGE_DIALOG_CLASSNAME = "com.tpsoft.tuixin.MessageDialog";
 
-	public static final String TAG_APILOG = "API LOG";
+	public static final String TAG_APILOG = "PushNotification-API";
+	public static final String TAG_MAINLOG = "MAIN";
 
 	private class MyBroadcastReceiver extends BroadcastReceiver {
 
@@ -57,7 +62,140 @@ public class MainActivity extends Activity {
 					showNotification(intent.getStringExtra("msgText"));
 				} else if (action.equals("log")) {
 					// 处理日志
-					Log.i(TAG_APILOG, intent.getStringExtra("logText"));
+					int type = intent.getIntExtra("type", 0);
+					int code = intent.getIntExtra("code", 0);
+					String params = intent.getStringExtra("params");
+					switch (type) {
+					case NotifyPushService.LOG_CONNECT: // 连接:
+						switch (code) {
+						case NotifyPushService.STATUS_CONNECT_CONNECTING: // 连接服务器...
+							Log.i(TAG_APILOG, "连接服务器 " + params + "...");
+							break;
+						case NotifyPushService.STATUS_CONNECT_CONNECTED: // 已经连接到服务器
+							Log.i(TAG_APILOG, "已连接到服务器。");
+							break;
+						case NotifyPushService.STATUS_CONNECT_APP_CERTIFICATING: // 应用认证...
+							Log.i(TAG_APILOG, "校验应用ID和接入密码...");
+							break;
+						case NotifyPushService.STATUS_CONNECT_APP_CERTIFICATED: // 应用认证通过
+							Log.i(TAG_APILOG, "应用认证通过。");
+							break;
+						case NotifyPushService.STATUS_CONNECT_USER_CERTIFICATING: // 用户认证...
+							Log.i(TAG_APILOG, "校验用户名和密码...");
+							break;
+						case NotifyPushService.STATUS_CONNECT_USER_CERTIFICATED: // 用户认证通过
+							Log.i(TAG_APILOG, "用户认证通过。");
+							break;
+						case NotifyPushService.STATUS_CONNECT_MSGKEY_RECEIVED: // 收到消息密钥
+							Log.i(TAG_APILOG, "收到消息密钥。");
+							break;
+						case NotifyPushService.STATUS_CONNECT_KEEPALIVEINTERVAL_RECEIVED: // 收到心跳周期
+							Log.d(TAG_APILOG,
+									"收到心跳周期: " + Integer.parseInt(params)
+											/ 1000 + "秒。");
+							break;
+						case NotifyPushService.STATUS_CONNECT_LOGON: // 登录成功
+							Log.i(TAG_APILOG, "登录成功。");
+							Toast.makeText(MainActivity.this, "登录成功",
+									Toast.LENGTH_SHORT).show();
+							break;
+						case NotifyPushService.STATUS_CONNECT_KEEPALIVE: // 发送心跳信号
+							Log.d(TAG_APILOG, "发送心跳信号...");
+							break;
+						case NotifyPushService.STATUS_CONNECT_KEEPALIVE_REPLIED: // 收到心跳回复信号
+							// showLog("收到心跳回复信号。");
+							Log.d(TAG_APILOG, "收到心跳回复信号");
+							break;
+						case NotifyPushService.ERROR_CONNECT_NETWORK_UNAVAILABLE: // 网络不可用
+							Log.w(TAG_APILOG, "网络不可用！");
+							Toast.makeText(MainActivity.this, "网络不可用",
+									Toast.LENGTH_SHORT).show();
+							break;
+						case NotifyPushService.ERROR_CONNECT_BROKEN: // 连接已中断
+							Log.w(TAG_APILOG, "连接已中断！");
+							Toast.makeText(MainActivity.this, "连接已中断",
+									Toast.LENGTH_SHORT).show();
+							break;
+						case NotifyPushService.ERROR_CONNECT_SERVER_UNAVAILABLE: // 服务器不可用
+							Log.w(TAG_APILOG, "服务器不可用！");
+							Toast.makeText(MainActivity.this, "服务器不可用",
+									Toast.LENGTH_SHORT).show();
+							break;
+						case NotifyPushService.ERROR_CONNECT_LOGIN_TIMEOUT: // 登录超时
+							Log.w(TAG_APILOG, "登录超时！");
+							Toast.makeText(MainActivity.this, "登录超时",
+									Toast.LENGTH_SHORT).show();
+							break;
+						case NotifyPushService.ERROR_CONNECT_IO_FAULT: // 网络IO故障
+							Log.w(TAG_APILOG, "网络IO故障！");
+							Toast.makeText(MainActivity.this, "网络IO故障",
+									Toast.LENGTH_SHORT).show();
+							break;
+						case NotifyPushService.ERROR_CONNECT_APP_CERTIFICATE: // 应用认证失败
+							Log.e(TAG_APILOG, "应用认证失败！");
+							Toast.makeText(MainActivity.this, "应用认证失败",
+									Toast.LENGTH_SHORT).show();
+							break;
+						case NotifyPushService.ERROR_CONNECT_USER_CERTIFICATE: // 用户认证失败
+							Log.e(TAG_APILOG, "用户认证失败！");
+							Toast.makeText(MainActivity.this, "用户认证失败",
+									Toast.LENGTH_SHORT).show();
+							break;
+						case NotifyPushService.ERROR_CONNECT_SERVER: // 服务器错误
+							Log.e(TAG_APILOG, "服务器错误！");
+							Toast.makeText(MainActivity.this, "服务器错误",
+									Toast.LENGTH_SHORT).show();
+							break;
+						default:
+							break;
+						}
+						break;
+					case NotifyPushService.LOG_SENDMSG: // 发送消息:
+						switch (code) {
+						case NotifyPushService.STATUS_SENDMSG_SUBMIT: // 提交消息
+							Log.i(TAG_APILOG, "提交 #" + params + " 消息...");
+							Toast.makeText(MainActivity.this, "提交消息...",
+									Toast.LENGTH_SHORT).show();
+							break;
+						case NotifyPushService.STATUS_SENDMSG_SUBMITTED: // 已提交消息
+							Log.i(TAG_APILOG, "#" + params + " 消息已提交。");
+							Toast.makeText(MainActivity.this, "消息已提交",
+									Toast.LENGTH_SHORT).show();
+							break;
+						case NotifyPushService.STATUS_SENDMSG_OK: // 收到消息确认
+							Log.i(TAG_APILOG, "#" + params + " 消息已确认。");
+							Toast.makeText(MainActivity.this, "消息已确认",
+									Toast.LENGTH_SHORT).show();
+							break;
+						case NotifyPushService.ERROR_SENDMSG_NOT_LOGON: // 尚未登录成功
+							Toast.makeText(MainActivity.this, "尚未成功登录",
+									Toast.LENGTH_SHORT).show();
+							break;
+						case NotifyPushService.ERROR_SENDMSG_DATA: // 消息数据错误
+							Log.e(TAG_APILOG, "#" + params + " 消息数据错误！");
+							break;
+						case NotifyPushService.ERROR_SENDMSG_SUBMIT: // 提交消息失败
+							Log.w(TAG_APILOG, "#" + params + " 消息提交失败。");
+							Toast.makeText(MainActivity.this, "消息提交失败",
+									Toast.LENGTH_SHORT).show();
+							break;
+						case NotifyPushService.ERROR_SENDMSG_FAILED: // 发送消息失败
+							int pos = params.indexOf(":");
+							String msgId = params.substring(0, pos);
+							String err = params.substring(pos + 1);
+							String errmsg = err.substring(err.indexOf(",") + 1);
+							Log.w(TAG_APILOG, "#" + msgId + " 消息发送失败(" + errmsg
+									+ ")！");
+							Toast.makeText(MainActivity.this, "消息发送失败",
+									Toast.LENGTH_SHORT).show();
+							break;
+						default:
+							break;
+						}
+						break;
+					default:
+						break;
+					}
 				} else if (action.equals("status")) {
 					// 响应消息接收器状态变化
 					boolean receiverStarted = intent.getBooleanExtra("started",
@@ -74,6 +212,10 @@ public class MainActivity extends Activity {
 					// 响应登录状态变化
 					boolean logining = intent
 							.getBooleanExtra("logining", false);
+					if (logining) {
+						Toast.makeText(MainActivity.this, "正在登录...",
+								Toast.LENGTH_SHORT).show();
+					}
 					ActionBar actionBar = (ActionBar) findViewById(R.id.actionbar);
 					actionBar.setProgressBarVisibility(logining ? View.VISIBLE
 							: View.GONE);
@@ -113,35 +255,17 @@ public class MainActivity extends Activity {
 		final ActionBar actionBar = (ActionBar) findViewById(R.id.actionbar);
 		actionBar.setHomeAction(new IntentAction(MainActivity.this,
 				createIntent(this), R.drawable.home_logo));
-		// /actionBar.setHomeLogo(R.drawable.ic_launcher);
-		// actionBar.setTitle(R.string.app_name);
+		// actionBar.setHomeLogo(R.drawable.ic_launcher);
+		actionBar.setTitle(R.string.app_name);
+		final Action sendMessageAction = new IntentAction(this, new Intent(
+				this, SendMessageActivity.class), R.drawable.send_message);
+		actionBar.addAction(sendMessageAction);
 
 		// 准备通知
 		mNM = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 
 		// 初始化消息和日志控件
 		msg = (LinearLayout) findViewById(R.id.msg);
-
-		// 恢复消息显示
-		Resources res = getResources();
-		for (MyMessage message : MyApplicationClass.savedMsgs) {
-			// 获取图片URL
-			String imageUrl = null;
-			if (message.getAttachments() != null) {
-				for (MyMessage.Attachment attachment : message.getAttachments()) {
-					if (attachment.getType().matches("image/.*")) {
-						imageUrl = attachment.getUrl();
-						break;
-					}
-				}
-			}
-			msg.addView(
-					makeMessageView(
-							message,
-							(imageUrl != null ? MyApplicationClass.savedImages
-									.get(imageUrl) : null), res), 0);
-		}
-		msgCount = MyApplicationClass.savedMsgs.size();
 
 		if (myBroadcastReceiver == null) {
 			// 准备与后台服务通信
@@ -177,8 +301,65 @@ public class MainActivity extends Activity {
 
 	@Override
 	public void onConfigurationChanged(Configuration newConfig) {
+		msg.removeAllViews();
+
+		Resources res = getResources();
+		for (MyMessage message : MyApplicationClass.savedMsgs) {
+			// 获取图片URL
+			String imageUrl = null;
+			if (message.getAttachments() != null) {
+				for (MyMessage.Attachment attachment : message.getAttachments()) {
+					if (attachment.getType().matches("image/.*")) {
+						imageUrl = attachment.getUrl();
+						break;
+					}
+				}
+			}
+			msg.addView(
+					makeMessageView(
+							message,
+							(imageUrl != null ? MyApplicationClass.savedImages
+									.get(imageUrl) : null), res), 0);
+		}
 		super.onConfigurationChanged(newConfig);
-		setContentView(R.layout.activity_main);
+	}
+
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		getMenuInflater().inflate(R.menu.activity_main, menu);
+		return true;
+	}
+
+	@Override
+	public boolean onPrepareOptionsMenu(Menu menu) {
+		if (MyApplicationClass.clientStarted) {
+			menu.findItem(R.id.menu_start).setEnabled(false);
+			menu.findItem(R.id.menu_stop).setEnabled(true);
+		} else {
+			menu.findItem(R.id.menu_start).setEnabled(true);
+			menu.findItem(R.id.menu_stop).setEnabled(false);
+		}
+		menu.findItem(R.id.menu_settings).setEnabled(true);
+		return true;
+	}
+
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		switch (item.getItemId()) {
+		case R.id.menu_start:
+			// 启动消息接收器
+			startMessageReceiver();
+			break;
+		case R.id.menu_stop:
+			// 停止消息接收器
+			stopMessageReceiver();
+			break;
+		case R.id.menu_settings:
+			// 打开设置界面
+			startActivity(new Intent(this, SettingsActivity.class));
+			break;
+		}
+		return false;
 	}
 
 	@Override
@@ -242,6 +423,19 @@ public class MainActivity extends Activity {
 		sendBroadcast(serviceIntent);
 	}
 
+	private void stopMessageReceiver() {
+		if (!MyApplicationClass.clientStarted)
+			return;
+
+		Toast.makeText(this, getText(R.string.receiver_stopping),
+				Toast.LENGTH_SHORT).show();
+		Intent serviceIntent = new Intent();
+		serviceIntent
+				.setAction("com.tpsoft.pushnotification.ServiceController");
+		serviceIntent.putExtra("command", "stop");
+		sendBroadcast(serviceIntent);
+	}
+
 	@SuppressLint("HandlerLeak")
 	private void showNotification(String msgText) {
 
@@ -254,12 +448,12 @@ public class MainActivity extends Activity {
 		}
 
 		// 获取图片URL及文件名
-		String attachmentFilename = null;
+		// String attachmentFilename = null;
 		String attachmentUrl = null;
 		if (message.getAttachments() != null) {
 			for (MyMessage.Attachment attachment : message.getAttachments()) {
 				if (attachment.getType().matches("image/.*")) {
-					attachmentFilename = attachment.getFilename();
+					// attachmentFilename = attachment.getFilename();
 					attachmentUrl = attachment.getUrl();
 					break;
 				}
@@ -277,31 +471,25 @@ public class MainActivity extends Activity {
 		//
 		final Intent messageDialogIntent = (messagePopupClosed ? new Intent(
 				MainActivity.this, MessageDialog.class) : new Intent());
-		if (attachmentUrl != null
-				&& (MyApplicationClass.mExternalStorageAvailable && MyApplicationClass.mExternalStorageWriteable)) {
-			final String imageFilename = new Date().getTime() + "_"
-					+ attachmentFilename;
+		if (attachmentUrl != null) {
 			final String imageUrl = attachmentUrl;
 			//
-			String sdcardPath = Environment.getExternalStorageDirectory()
-					.getPath();
-			final String imageFilepath = sdcardPath + "/tmp/" + imageFilename;
 			final Handler handler = new Handler() {
 				@SuppressLint("HandlerLeak")
 				@Override
 				public void handleMessage(Message msg) {
 					switch (msg.what) {
 					case 0:
-						if (msg.arg1 == 0) {
+						Bitmap image = MyApplicationClass.savedImages
+								.get(imageUrl);
+						if (image != null) {
 							msgParams.putBoolean("showPic", true);
-							msgParams.putString("imageFilepath", imageFilepath);
-							MyApplicationClass.savedImages.put(imageUrl,
-									imageFilepath);
+							msgParams.putString("picUrl", imageUrl);
 						} else {
 							msgParams.putBoolean("showPic", false);
 						}
 						// 添加到消息列表
-						showMsg(message, msg.arg1 == 0 ? imageFilepath : null);
+						showMsg(message, image);
 						// 显示/更新消息对话框
 						messageDialogIntent.putExtras(msgParams);
 						if (messagePopupClosed) {
@@ -330,14 +518,24 @@ public class MainActivity extends Activity {
 
 			new Thread() {
 				public void run() {
-					int errCode = 0;
 					if (!MyApplicationClass.savedImages.containsKey(imageUrl)) {
-						errCode = httpDownloader.downFile(imageUrl, "tmp",
-								imageFilename, true);
+						InputStream imageStream = httpDownloader
+								.getInputStreamFromURL(imageUrl);
+						Bitmap image = null;
+						if (imageStream != null) {
+							image = BitmapFactory.decodeStream(imageStream);
+							MyApplicationClass.savedImages.put(imageUrl, image);
+							try {
+								imageStream.close();
+							} catch (IOException e) {
+								e.printStackTrace();
+							}
+						} else {
+							MyApplicationClass.savedImages.put(imageUrl, null);
+						}
 					}
 					Message msg = new Message();
 					msg.what = 0;
-					msg.arg1 = errCode;
 					handler.sendMessage(msg);
 				}
 			}.start();
@@ -366,11 +564,11 @@ public class MainActivity extends Activity {
 		}
 	}
 
-	private void showMsg(MyMessage message, String imageFilepath) {
+	private void showMsg(MyMessage message, Bitmap image) {
 		Resources res = getResources();
 
 		// 生成消息界面
-		View view = makeMessageView(message, imageFilepath, res);
+		View view = makeMessageView(message, image, res);
 		if (msgCount < MAX_MSG_COUNT) {
 			msg.addView(view, 0);
 			msgCount++;
@@ -389,24 +587,13 @@ public class MainActivity extends Activity {
 	}
 
 	@SuppressLint("ResourceAsColor")
-	private View makeMessageView(MyMessage message, String imageFilepath,
-			Resources res) {
+	private View makeMessageView(MyMessage message, Bitmap image, Resources res) {
 		LayoutInflater inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
 		final View listItemView = inflater.inflate(R.layout.message_list_item,
 				(ViewGroup) findViewById(R.id.message));
 		ImageView msgAttachmentView = (ImageView) listItemView
 				.findViewById(R.id.msgAttachment);
-		Bitmap bitmap = null;
-		if (imageFilepath != null) {
-			try {
-				FileInputStream fis = new FileInputStream(imageFilepath);
-				bitmap = BitmapFactory.decodeStream(fis);
-				fis.close();
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
-		msgAttachmentView.setImageBitmap(bitmap);
+		msgAttachmentView.setImageBitmap(image);
 		//
 		TextView msgTitleView = (TextView) listItemView
 				.findViewById(R.id.msgTitle);
@@ -416,6 +603,19 @@ public class MainActivity extends Activity {
 		TextView msgBodyView = (TextView) listItemView
 				.findViewById(R.id.msgBody);
 		msgBodyView.setText(message.getBody());
+		if (message.getUrl() != null) {
+			final String url = message.getUrl();
+			msgBodyView.setClickable(true);
+			msgBodyView.setOnClickListener(new View.OnClickListener() {
+
+				@Override
+				public void onClick(View view) {
+					Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri
+							.parse(url));
+					startActivity(browserIntent);
+				}
+			});
+		}
 		//
 		TextView msgTimeView = (TextView) listItemView
 				.findViewById(R.id.msgTime);

@@ -1,6 +1,5 @@
 package com.tpsoft.tuixin;
 
-import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
@@ -15,8 +14,9 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.GestureDetector;
 import android.view.GestureDetector.OnGestureListener;
@@ -61,26 +61,29 @@ public class MessageDialog extends Activity implements OnTouchListener,
 						popupLayout.setOnTouchListener(MessageDialog.this);
 						popupLayout.setLongClickable(true);
 						//
-						LinearLayout msgContainer = (LinearLayout)notifyView.findViewById(R.id.msgContainer);
+						LinearLayout msgContainer = (LinearLayout) notifyView
+								.findViewById(R.id.msgContainer);
 						msgContainer.setOnTouchListener(MessageDialog.this);
 						//
-						RelativeLayout msgTitleBar = (RelativeLayout)notifyView.findViewById(R.id.msgTitleBar);
+						RelativeLayout msgTitleBar = (RelativeLayout) notifyView
+								.findViewById(R.id.msgTitleBar);
 						msgTitleBar.setOnTouchListener(MessageDialog.this);
 						//
-						TextView msgIndex = (TextView)notifyView.findViewById(R.id.msgIndex);
+						TextView msgIndex = (TextView) notifyView
+								.findViewById(R.id.msgIndex);
 						msgIndex.setOnTouchListener(MessageDialog.this);
 						//
-						TextView msgTitle = (TextView)notifyView.findViewById(R.id.msgTitle);
+						TextView msgTitle = (TextView) notifyView
+								.findViewById(R.id.msgTitle);
 						msgTitle.setOnTouchListener(MessageDialog.this);
 						//
-						TextView msgBody = (TextView)notifyView.findViewById(R.id.msgBody);
+						TextView msgBody = (TextView) notifyView
+								.findViewById(R.id.msgBody);
 						msgBody.setOnTouchListener(MessageDialog.this);
 						//
-						ImageView msgAttachment = (ImageView)notifyView.findViewById(R.id.msgAttachment);
+						ImageView msgAttachment = (ImageView) notifyView
+								.findViewById(R.id.msgAttachment);
 						msgAttachment.setOnTouchListener(MessageDialog.this);
-						//
-						TextView msgUrl = (TextView)notifyView.findViewById(R.id.msgUrl);
-						msgUrl.setOnTouchListener(MessageDialog.this);
 					}
 				}
 			}
@@ -229,17 +232,17 @@ public class MessageDialog extends Activity implements OnTouchListener,
 		} else {
 			alertDialogLayoutParams.gravity = Gravity.BOTTOM;
 		}
-		alertDialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
-			
-			@Override
-			public void onDismiss(DialogInterface dialog) {
-				// 取消定时器
-				autoCloseTimer.cancel();
-				// 关闭窗口
-				closeSelf();
-			}
-		});
+		alertDialog
+				.setOnDismissListener(new DialogInterface.OnDismissListener() {
 
+					@Override
+					public void onDismiss(DialogInterface dialog) {
+						// 取消定时器
+						autoCloseTimer.cancel();
+						// 关闭窗口
+						closeSelf();
+					}
+				});
 
 		autoCloseTimer = new Timer();
 		autoCloseTimer.schedule(new TimerTask() {
@@ -307,25 +310,32 @@ public class MessageDialog extends Activity implements OnTouchListener,
 		// 消息正文
 		TextView msgBody = (TextView) notifyView.findViewById(R.id.msgBody);
 		msgBody.setText(msgBundle.getString("body"));
-		// 详情URL
-		TextView msgUrl = (TextView) notifyView.findViewById(R.id.msgUrl);
-		if (msgBundle.containsKey("url"))
-			msgUrl.setText(msgBundle.getString("url"));
-		else
-			msgUrl.setText("");
+		// 消息详情
+		TextView msgDetails = (TextView) notifyView.findViewById(R.id.msgDetails);
+		if (msgBundle.containsKey("url")) {
+			final String url = msgBundle.getString("url");
+			msgDetails.setClickable(true);
+			msgDetails.setTextColor(Color.BLUE);
+			msgDetails.setOnClickListener(new View.OnClickListener() {
+
+				@Override
+				public void onClick(View view) {
+					Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri
+							.parse(url));
+					startActivity(browserIntent);
+				}
+			});
+		} else {
+			msgDetails.setClickable(false);
+			msgDetails.setTextColor(Color.GRAY);
+		}
 		// 图片
 		final ImageView msgAttachment = (ImageView) notifyView
 				.findViewById(R.id.msgAttachment);
 		Bitmap bitmap = null;
 		if (msgBundle.getBoolean("showPic")) {
-			String imageFilepath = msgBundle.getString("imageFilepath");
-			try {
-				FileInputStream fis = new FileInputStream(imageFilepath);
-				bitmap = BitmapFactory.decodeStream(fis);
-				fis.close();
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
+			bitmap = MyApplicationClass.savedImages.get(msgBundle
+					.getString("picUrl"));
 		}
 		msgAttachment.setImageBitmap(bitmap);
 	}

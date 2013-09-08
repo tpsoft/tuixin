@@ -39,9 +39,9 @@
                 android:id="@+id/msgTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_toRightOf="@id/msgIndex"
                 android:layout_marginLeft="4dp"
-                android:layout_marginRight="30dp"
+                android:layout_marginRight="2dp"
+                android:layout_toRightOf="@id/msgIndex"
                 android:fontFamily="黑体"
                 android:maxLines="2"
                 android:text="@string/msg_title"
@@ -49,6 +49,20 @@
                 android:textIsSelectable="true"
                 android:textSize="16sp" />
 
+            <TextView
+                android:id="@+id/msgDetails"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="2dp"
+                android:layout_marginRight="36dp"
+                android:layout_toRightOf="@id/msgTitle"
+                android:fontFamily="楷体"
+                android:maxLines="2"
+                android:text="@string/msg_details"
+                android:textColor="#0000FF"
+                android:textIsSelectable="false"
+                android:textSize="14sp" />
+            
             <ImageButton
                 android:id="@+id/closeButton"
                 android:layout_width="wrap_content"
@@ -64,7 +78,6 @@
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="2dp"
-            android:autoLink="all"
             android:fontFamily="宋体"
             android:maxLines="10"
             android:text="@string/msg_body"
@@ -81,18 +94,6 @@
             android:cropToPadding="true"
             android:scaleType="fitStart"
             android:src="@drawable/ic_launcher" />
-
-        <TextView
-            android:id="@+id/msgUrl"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:autoLink="web"
-            android:fontFamily="仿宋"
-            android:maxLines="1"
-            android:text="@string/msg_url"
-            android:textColor="#999999"
-            android:textSize="12sp"
-            android:textStyle="italic" />
     </LinearLayout>
 
 </LinearLayout>
