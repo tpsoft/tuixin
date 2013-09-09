@@ -305,30 +305,36 @@ public class MessageDialog extends Activity implements OnTouchListener,
 		TextView msgTitle = (TextView) notifyView.findViewById(R.id.msgTitle);
 		if (msgBundle.containsKey("title"))
 			msgTitle.setText(msgBundle.getString("title"));
+		else if (msgBundle.containsKey("sender"))
+			msgTitle.setText(msgBundle.getString("sender")+": ");
 		else
-			msgTitle.setText("");
+			msgTitle.setText(R.string.msg_notitle);
+		if (msgBundle.containsKey("url")) {
+			final String url = msgBundle.getString("url");
+			if (url!=null && !url.equals("")) {
+				msgTitle.setClickable(true);
+				msgTitle.setTextColor(Color.BLUE);
+				msgTitle.setOnClickListener(new View.OnClickListener() {
+	
+					@Override
+					public void onClick(View view) {
+						try {
+							Intent browserIntent = new Intent(Intent.ACTION_VIEW,
+									Uri.parse(url));
+							startActivity(browserIntent);
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
+					}
+				});
+			}
+		} else {
+			msgTitle.setClickable(false);
+			msgTitle.setTextColor(Color.BLACK); // TODO 定义消息标题正常颜色常量
+		}
 		// 消息正文
 		TextView msgBody = (TextView) notifyView.findViewById(R.id.msgBody);
 		msgBody.setText(msgBundle.getString("body"));
-		// 消息详情
-		TextView msgDetails = (TextView) notifyView.findViewById(R.id.msgDetails);
-		if (msgBundle.containsKey("url")) {
-			final String url = msgBundle.getString("url");
-			msgDetails.setClickable(true);
-			msgDetails.setTextColor(Color.BLUE);
-			msgDetails.setOnClickListener(new View.OnClickListener() {
-
-				@Override
-				public void onClick(View view) {
-					Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri
-							.parse(url));
-					startActivity(browserIntent);
-				}
-			});
-		} else {
-			msgDetails.setClickable(false);
-			msgDetails.setTextColor(Color.GRAY);
-		}
 		// 图片
 		final ImageView msgAttachment = (ImageView) notifyView
 				.findViewById(R.id.msgAttachment);

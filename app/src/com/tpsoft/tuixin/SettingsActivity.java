@@ -59,4 +59,11 @@ public class SettingsActivity extends PreferenceActivity implements
 		}
 	}
 
+	@Override
+	public void finish() {
+		MyApplicationClass myApp = (MyApplicationClass) getApplication();
+		myApp.loadUserSettings();
+		super.finish();
+	}
+
 }

@@ -23,11 +23,16 @@
         <EditTextPreference
             android:defaultValue=""
             android:digits="+0123456789"
-            android:inputType="phone"
             android:key="clientId"
             android:persistent="true"
             android:summary="@string/client_id_summary"
             android:title="@string/client_id" />
+        <EditTextPreference
+            android:defaultValue=""
+            android:key="clientPassword"
+            android:persistent="true"
+            android:summary="@string/client_password_summary"
+            android:title="@string/client_password" />
         
         <CheckBoxPreference
             android:defaultValue="true"

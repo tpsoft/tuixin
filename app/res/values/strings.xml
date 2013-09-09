@@ -20,22 +20,23 @@
     <string name="server_host">服务地址</string>
     <string name="server_port">服务端口</string>
     <string name="settings_client">客户端</string>
-    <string name="client_id">唯一标识</string>
+    <string name="client_id">账号名称</string>
+    <string name="client_password">登录密码</string>
     <string name="emulate_sms">模拟短信</string>
     <string name="play_sound">声音提醒</string>
     
     <string name="server_host_summary">要登录的服务器的域名或IP地址</string>
     <string name="server_port_summary">用4至5位数字表示的服务端口号</string>
-    <string name="client_id_summary">以1开始的11位手机号码(允许带前缀+86)，或6位任意数字</string>
-    <string name="emulate_sms_summary">将接收到的消息写入短信数据库，并发出通知</string>
+    <string name="client_id_summary">用户标识，建议使用手机号码</string>
+    <string name="client_password_summary">默认与账号名称相同</string>
     <string name="play_sound_summary">收到新消息时，发出声音提醒</string>
     
     <string name="msg_received">接收到一条新消息</string>
     <string name="msg_index"></string>
     <string name="msg_title">消息标题</string>
+    <string name="msg_notitle">无标题</string>
     <string name="msg_body">消息正文</string>
     <string name="msg_attachment">消息附件</string>   
-    <string name="msg_details">详情</string>
     <string name="msg_time">消息时间</string>
     <string name="msg_first">已经是第一条消息了</string>
     <string name="msg_last">已经是最后一条消息了</string>

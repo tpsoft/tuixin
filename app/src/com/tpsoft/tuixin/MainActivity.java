@@ -2,6 +2,7 @@ package com.tpsoft.tuixin;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
@@ -17,6 +18,7 @@ import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -47,6 +49,7 @@ public class MainActivity extends Activity {
 
 	public static final String MY_CLASSNAME = "com.tpsoft.tuixin.MainActivity";
 	public static final String MESSAGE_DIALOG_CLASSNAME = "com.tpsoft.tuixin.MessageDialog";
+	public static final String MESSAGE_SEND_CLASSNAME = "com.tpsoft.tuixin.SendMessageActivity";
 
 	public static final String TAG_APILOG = "PushNotification-API";
 	public static final String TAG_MAINLOG = "MAIN";
@@ -229,12 +232,24 @@ public class MainActivity extends Activity {
 				} else {
 					;
 				}
+			} else if (intent.getAction().equals(MESSAGE_SEND_CLASSNAME)) {
+				String action = intent.getStringExtra("action");
+				if (action.equals("sent")) {
+					try {
+						showMsg(new MyMessage(intent.getBundleExtra("message")),
+								null);
+					} catch (ParseException e) {
+						e.printStackTrace();
+					}
+				} else {
+					;
+				}
 			}
 		}
 	}
 
 	private static final SimpleDateFormat sdf = new SimpleDateFormat(
-			"HH:mm:ss", Locale.CHINESE);
+			"yyyy年MM月dd日 HH:mm:ss", Locale.CHINESE);
 
 	private static final int MAX_MSG_COUNT = 20;
 	private LinearLayout msg;
@@ -251,6 +266,9 @@ public class MainActivity extends Activity {
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
+
+		MyApplicationClass myApp = (MyApplicationClass) getApplication();
+		myApp.loadUserSettings();
 
 		final ActionBar actionBar = (ActionBar) findViewById(R.id.actionbar);
 		actionBar.setHomeAction(new IntentAction(MainActivity.this,
@@ -279,6 +297,7 @@ public class MainActivity extends Activity {
 			IntentFilter filter = new IntentFilter();
 			filter.addAction("com.tpsoft.pushnotification.NotifyPushService");
 			filter.addAction(MESSAGE_DIALOG_CLASSNAME);
+			filter.addAction(MESSAGE_SEND_CLASSNAME);
 			registerReceiver(myBroadcastReceiver, filter);
 
 			// 启动消息接收器
@@ -303,7 +322,9 @@ public class MainActivity extends Activity {
 	public void onConfigurationChanged(Configuration newConfig) {
 		msg.removeAllViews();
 
+		Date now = new Date();
 		Resources res = getResources();
+
 		for (MyMessage message : MyApplicationClass.savedMsgs) {
 			// 获取图片URL
 			String imageUrl = null;
@@ -317,6 +338,7 @@ public class MainActivity extends Activity {
 			}
 			msg.addView(
 					makeMessageView(
+							now,
 							message,
 							(imageUrl != null ? MyApplicationClass.savedImages
 									.get(imageUrl) : null), res), 0);
@@ -397,8 +419,11 @@ public class MainActivity extends Activity {
 				Toast.LENGTH_SHORT).show();
 
 		// 获取最新设置
-		MyApplicationClass myApp = (MyApplicationClass) getApplication();
-		myApp.loadUserSettings();
+		String clientPassword = MyApplicationClass.userSettings
+				.getClientPassword().trim();
+		if (clientPassword.equals("")) {
+			clientPassword = MyApplicationClass.userSettings.getClientId();
+		}
 
 		AppParams appParams = new AppParams(MyApplicationClass.APP_ID,
 				MyApplicationClass.APP_PASSWORD,
@@ -406,8 +431,7 @@ public class MainActivity extends Activity {
 		LoginParams loginParams = new LoginParams(
 				MyApplicationClass.userSettings.getServerHost(),
 				MyApplicationClass.userSettings.getServerPort(),
-				MyApplicationClass.userSettings.getClientId(),
-				MyApplicationClass.userSettings.getClientPassword());
+				MyApplicationClass.userSettings.getClientId(), clientPassword);
 		NetworkParams networkParams = new NetworkParams();
 
 		Intent serviceIntent = new Intent();
@@ -463,6 +487,8 @@ public class MainActivity extends Activity {
 		// 为消息对话框准备数据
 		final Bundle msgParams = new Bundle();
 		msgParams.putBoolean("alert", MyApplicationClass.ALERT_MSG);
+		if (message.getSender() != null)
+			msgParams.putString("sender", message.getSender());
 		if (message.getTitle() != null && !message.getTitle().equals(""))
 			msgParams.putString("title", message.getTitle());
 		msgParams.putString("body", message.getBody());
@@ -565,10 +591,11 @@ public class MainActivity extends Activity {
 	}
 
 	private void showMsg(MyMessage message, Bitmap image) {
+		Date now = new Date();
 		Resources res = getResources();
 
 		// 生成消息界面
-		View view = makeMessageView(message, image, res);
+		View view = makeMessageView(now, message, image, res);
 		if (msgCount < MAX_MSG_COUNT) {
 			msg.addView(view, 0);
 			msgCount++;
@@ -577,17 +604,30 @@ public class MainActivity extends Activity {
 			msg.addView(view, 0);
 		}
 
-		// 保存消息界面
+		// 保存消息
 		MyApplicationClass.savedMsgs.add(message);
 		if (MyApplicationClass.savedMsgs.size() == MAX_MSG_COUNT) {
 			MyApplicationClass.savedMsgs.remove(0);
+		}
+
+		if (msgCount > 1) {
+			// 更新旧消息的生成时间
+			for (int i = 1; i < msgCount; i++) {
+				message = MyApplicationClass.savedMsgs.get(msgCount - i - 1);
+				View listItemView = msg.getChildAt(i);
+				TextView msgTimeView = (TextView) listItemView
+						.findViewById(R.id.msgTime);
+				msgTimeView.setText(makeTimeString(now,
+						message.getGenerateTime()));
+			}
 		}
 
 		useMsgColor1 = !useMsgColor1;
 	}
 
 	@SuppressLint("ResourceAsColor")
-	private View makeMessageView(MyMessage message, Bitmap image, Resources res) {
+	private View makeMessageView(Date now, MyMessage message, Bitmap image,
+			Resources res) {
 		LayoutInflater inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
 		final View listItemView = inflater.inflate(R.layout.message_list_item,
 				(ViewGroup) findViewById(R.id.message));
@@ -597,34 +637,56 @@ public class MainActivity extends Activity {
 		//
 		TextView msgTitleView = (TextView) listItemView
 				.findViewById(R.id.msgTitle);
-		msgTitleView.setText(message.getTitle() != null ? message.getTitle()
-				: "");
-		//
-		TextView msgBodyView = (TextView) listItemView
-				.findViewById(R.id.msgBody);
-		msgBodyView.setText(message.getBody());
+		if (message.getTitle() != null)
+			msgTitleView.setText(message.getTitle());
+		else if (message.getSender() != null)
+			msgTitleView.setText(message.getSender() + ": ");
+		else
+			msgTitleView.setText(R.string.msg_notitle);
 		if (message.getUrl() != null) {
 			final String url = message.getUrl();
-			msgBodyView.setClickable(true);
-			msgBodyView.setOnClickListener(new View.OnClickListener() {
+			msgTitleView.setClickable(true);
+			msgTitleView.setTextColor(Color.BLUE);
+			msgTitleView.setOnClickListener(new View.OnClickListener() {
 
 				@Override
 				public void onClick(View view) {
-					Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri
-							.parse(url));
-					startActivity(browserIntent);
+					try {
+						Intent browserIntent = new Intent(Intent.ACTION_VIEW,
+								Uri.parse(url));
+						startActivity(browserIntent);
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
 				}
 			});
 		}
 		//
+		TextView msgBodyView = (TextView) listItemView
+				.findViewById(R.id.msgBody);
+		msgBodyView.setText(message.getBody());
+		//
 		TextView msgTimeView = (TextView) listItemView
 				.findViewById(R.id.msgTime);
-		msgTimeView.setText(makeTimeString(message.getGenerateTime()));
+		msgTimeView.setText(makeTimeString(now, message.getGenerateTime()));
 		return listItemView;
 	}
 
-	private String makeTimeString(Date time) {
-		return sdf.format(time);
+	private String makeTimeString(Date now, Date time) {
+		String str;
+		long diffInSeconds = (now.getTime() - time.getTime()) / 1000;
+		if (diffInSeconds < 60) {
+			str = "刚刚";
+		} else if (diffInSeconds < 60 * 60) {
+			str = (diffInSeconds / 60) + "分钟前";
+		} else if (diffInSeconds < 60 * 60 * 24) {
+			str = (diffInSeconds / (60 * 60)) + "小时前";
+		} else if (diffInSeconds < 60 * 60 * 24 * 30) {
+			str = (diffInSeconds / (60 * 60 * 24)) + "天前";
+		} else {
+			str = sdf.format(time);
+		}
+		return str;
 	}
 
 	public static Intent createIntent(Context context) {
