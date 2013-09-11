@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/message_list_item"
     android:layout_width="fill_parent"
     android:layout_height="wrap_content"
-    android:background="@drawable/message_background"
+    android:background="#fff"
     android:orientation="horizontal"
     android:padding="4dp" >
 
@@ -62,8 +63,7 @@
             android:textColor="#382d24"
             android:textIsSelectable="true"
             android:textSize="14sp" />
-
-        <ImageView
+        <ImageView
             android:id="@+id/msgAttachment"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"

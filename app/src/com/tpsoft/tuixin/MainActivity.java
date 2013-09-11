@@ -59,8 +59,9 @@ public class MainActivity extends Activity {
 	public static final String TAG_MAINLOG = "MAIN";
 
 	public static final String SENDER_ICON_TITLE = "sender-avatar";
-
 	private static final int MESSAGE_REPLY = Menu.FIRST;
+
+	private int msgCount = 0;
 
 	private class MyBroadcastReceiver extends BroadcastReceiver {
 
@@ -72,132 +73,132 @@ public class MainActivity extends Activity {
 				if (action.equals("notify")) {
 					showNotification(intent.getStringExtra("msgText"));
 				} else if (action.equals("log")) {
-					// ´¦ÀíÈÕÖ¾
+					// å¤„ç†æ—¥å¿—
 					int type = intent.getIntExtra("type", 0);
 					int code = intent.getIntExtra("code", 0);
 					String params = intent.getStringExtra("params");
 					switch (type) {
-					case NotifyPushService.LOG_CONNECT: // Á¬½Ó:
+					case NotifyPushService.LOG_CONNECT: // è¿æ¥:
 						switch (code) {
-						case NotifyPushService.STATUS_CONNECT_CONNECTING: // Á¬½Ó·şÎñÆ÷...
-							Log.i(TAG_APILOG, "Á¬½Ó·şÎñÆ÷ " + params + "...");
+						case NotifyPushService.STATUS_CONNECT_CONNECTING: // è¿æ¥æœåŠ¡å™¨...
+							Log.i(TAG_APILOG, "è¿æ¥æœåŠ¡å™¨ " + params + "...");
 							break;
-						case NotifyPushService.STATUS_CONNECT_CONNECTED: // ÒÑ¾­Á¬½Óµ½·şÎñÆ÷
-							Log.i(TAG_APILOG, "ÒÑÁ¬½Óµ½·şÎñÆ÷¡£");
+						case NotifyPushService.STATUS_CONNECT_CONNECTED: // å·²ç»è¿æ¥åˆ°æœåŠ¡å™¨
+							Log.i(TAG_APILOG, "å·²è¿æ¥åˆ°æœåŠ¡å™¨ã€‚");
 							break;
-						case NotifyPushService.STATUS_CONNECT_APP_CERTIFICATING: // Ó¦ÓÃÈÏÖ¤...
-							Log.i(TAG_APILOG, "Ğ£ÑéÓ¦ÓÃIDºÍ½ÓÈëÃÜÂë...");
+						case NotifyPushService.STATUS_CONNECT_APP_CERTIFICATING: // åº”ç”¨è®¤è¯...
+							Log.i(TAG_APILOG, "æ ¡éªŒåº”ç”¨IDå’Œæ¥å…¥å¯†ç ...");
 							break;
-						case NotifyPushService.STATUS_CONNECT_APP_CERTIFICATED: // Ó¦ÓÃÈÏÖ¤Í¨¹ı
-							Log.i(TAG_APILOG, "Ó¦ÓÃÈÏÖ¤Í¨¹ı¡£");
+						case NotifyPushService.STATUS_CONNECT_APP_CERTIFICATED: // åº”ç”¨è®¤è¯é€šè¿‡
+							Log.i(TAG_APILOG, "åº”ç”¨è®¤è¯é€šè¿‡ã€‚");
 							break;
-						case NotifyPushService.STATUS_CONNECT_USER_CERTIFICATING: // ÓÃ»§ÈÏÖ¤...
-							Log.i(TAG_APILOG, "Ğ£ÑéÓÃ»§ÃûºÍÃÜÂë...");
+						case NotifyPushService.STATUS_CONNECT_USER_CERTIFICATING: // ç”¨æˆ·è®¤è¯...
+							Log.i(TAG_APILOG, "æ ¡éªŒç”¨æˆ·åå’Œå¯†ç ...");
 							break;
-						case NotifyPushService.STATUS_CONNECT_USER_CERTIFICATED: // ÓÃ»§ÈÏÖ¤Í¨¹ı
-							Log.i(TAG_APILOG, "ÓÃ»§ÈÏÖ¤Í¨¹ı¡£");
+						case NotifyPushService.STATUS_CONNECT_USER_CERTIFICATED: // ç”¨æˆ·è®¤è¯é€šè¿‡
+							Log.i(TAG_APILOG, "ç”¨æˆ·è®¤è¯é€šè¿‡ã€‚");
 							break;
-						case NotifyPushService.STATUS_CONNECT_MSGKEY_RECEIVED: // ÊÕµ½ÏûÏ¢ÃÜÔ¿
-							Log.i(TAG_APILOG, "ÊÕµ½ÏûÏ¢ÃÜÔ¿¡£");
+						case NotifyPushService.STATUS_CONNECT_MSGKEY_RECEIVED: // æ”¶åˆ°æ¶ˆæ¯å¯†é’¥
+							Log.i(TAG_APILOG, "æ”¶åˆ°æ¶ˆæ¯å¯†é’¥ã€‚");
 							break;
-						case NotifyPushService.STATUS_CONNECT_KEEPALIVEINTERVAL_RECEIVED: // ÊÕµ½ĞÄÌøÖÜÆÚ
+						case NotifyPushService.STATUS_CONNECT_KEEPALIVEINTERVAL_RECEIVED: // æ”¶åˆ°å¿ƒè·³å‘¨æœŸ
 							Log.i(TAG_APILOG,
-									"ÊÕµ½ĞÄÌøÖÜÆÚ: " + Integer.parseInt(params)
-											/ 1000 + "Ãë¡£");
+									"æ”¶åˆ°å¿ƒè·³å‘¨æœŸ: " + Integer.parseInt(params)
+											/ 1000 + "ç§’ã€‚");
 							break;
-						case NotifyPushService.STATUS_CONNECT_LOGON: // µÇÂ¼³É¹¦
-							Log.i(TAG_APILOG, "µÇÂ¼³É¹¦¡£");
-							Toast.makeText(MainActivity.this, "µÇÂ¼³É¹¦",
+						case NotifyPushService.STATUS_CONNECT_LOGON: // ç™»å½•æˆåŠŸ
+							Log.i(TAG_APILOG, "ç™»å½•æˆåŠŸã€‚");
+							Toast.makeText(MainActivity.this, "ç™»å½•æˆåŠŸ",
 									Toast.LENGTH_SHORT).show();
 							break;
-						case NotifyPushService.STATUS_CONNECT_KEEPALIVE: // ·¢ËÍĞÄÌøĞÅºÅ
-							Log.d(TAG_APILOG, "·¢ËÍĞÄÌøĞÅºÅ...");
+						case NotifyPushService.STATUS_CONNECT_KEEPALIVE: // å‘é€å¿ƒè·³ä¿¡å·
+							Log.d(TAG_APILOG, "å‘é€å¿ƒè·³ä¿¡å·...");
 							break;
-						case NotifyPushService.STATUS_CONNECT_KEEPALIVE_REPLIED: // ÊÕµ½ĞÄÌø»Ø¸´ĞÅºÅ
-							// showLog("ÊÕµ½ĞÄÌø»Ø¸´ĞÅºÅ¡£");
-							Log.d(TAG_APILOG, "ÊÕµ½ĞÄÌø»Ø¸´ĞÅºÅ");
+						case NotifyPushService.STATUS_CONNECT_KEEPALIVE_REPLIED: // æ”¶åˆ°å¿ƒè·³å›å¤ä¿¡å·
+							// showLog("æ”¶åˆ°å¿ƒè·³å›å¤ä¿¡å·ã€‚");
+							Log.d(TAG_APILOG, "æ”¶åˆ°å¿ƒè·³å›å¤ä¿¡å·");
 							break;
-						case NotifyPushService.ERROR_CONNECT_NETWORK_UNAVAILABLE: // ÍøÂç²»¿ÉÓÃ
-							Log.w(TAG_APILOG, "ÍøÂç²»¿ÉÓÃ£¡");
-							Toast.makeText(MainActivity.this, "ÍøÂç²»¿ÉÓÃ",
+						case NotifyPushService.ERROR_CONNECT_NETWORK_UNAVAILABLE: // ç½‘ç»œä¸å¯ç”¨
+							Log.w(TAG_APILOG, "ç½‘ç»œä¸å¯ç”¨ï¼");
+							Toast.makeText(MainActivity.this, "ç½‘ç»œä¸å¯ç”¨",
 									Toast.LENGTH_SHORT).show();
 							break;
-						case NotifyPushService.ERROR_CONNECT_BROKEN: // Á¬½ÓÒÑÖĞ¶Ï
-							Log.w(TAG_APILOG, "Á¬½ÓÒÑÖĞ¶Ï£¡");
-							Toast.makeText(MainActivity.this, "Á¬½ÓÒÑÖĞ¶Ï",
+						case NotifyPushService.ERROR_CONNECT_BROKEN: // è¿æ¥å·²ä¸­æ–­
+							Log.w(TAG_APILOG, "è¿æ¥å·²ä¸­æ–­ï¼");
+							Toast.makeText(MainActivity.this, "è¿æ¥å·²ä¸­æ–­",
 									Toast.LENGTH_SHORT).show();
 							break;
-						case NotifyPushService.ERROR_CONNECT_SERVER_UNAVAILABLE: // ·şÎñÆ÷²»¿ÉÓÃ
-							Log.w(TAG_APILOG, "·şÎñÆ÷²»¿ÉÓÃ£¡");
-							Toast.makeText(MainActivity.this, "·şÎñÆ÷²»¿ÉÓÃ",
+						case NotifyPushService.ERROR_CONNECT_SERVER_UNAVAILABLE: // æœåŠ¡å™¨ä¸å¯ç”¨
+							Log.w(TAG_APILOG, "æœåŠ¡å™¨ä¸å¯ç”¨ï¼");
+							Toast.makeText(MainActivity.this, "æœåŠ¡å™¨ä¸å¯ç”¨",
 									Toast.LENGTH_SHORT).show();
 							break;
-						case NotifyPushService.ERROR_CONNECT_LOGIN_TIMEOUT: // µÇÂ¼³¬Ê±
-							Log.w(TAG_APILOG, "µÇÂ¼³¬Ê±£¡");
-							Toast.makeText(MainActivity.this, "µÇÂ¼³¬Ê±",
+						case NotifyPushService.ERROR_CONNECT_LOGIN_TIMEOUT: // ç™»å½•è¶…æ—¶
+							Log.w(TAG_APILOG, "ç™»å½•è¶…æ—¶ï¼");
+							Toast.makeText(MainActivity.this, "ç™»å½•è¶…æ—¶",
 									Toast.LENGTH_SHORT).show();
 							break;
-						case NotifyPushService.ERROR_CONNECT_IO_FAULT: // ÍøÂçIO¹ÊÕÏ
-							Log.w(TAG_APILOG, "ÍøÂçIO¹ÊÕÏ£¡");
-							Toast.makeText(MainActivity.this, "ÍøÂçIO¹ÊÕÏ",
+						case NotifyPushService.ERROR_CONNECT_IO_FAULT: // ç½‘ç»œIOæ•…éšœ
+							Log.w(TAG_APILOG, "ç½‘ç»œIOæ•…éšœï¼");
+							Toast.makeText(MainActivity.this, "ç½‘ç»œIOæ•…éšœ",
 									Toast.LENGTH_SHORT).show();
 							break;
-						case NotifyPushService.ERROR_CONNECT_APP_CERTIFICATE: // Ó¦ÓÃÈÏÖ¤Ê§°Ü
-							Log.e(TAG_APILOG, "Ó¦ÓÃÈÏÖ¤Ê§°Ü£¡");
-							Toast.makeText(MainActivity.this, "Ó¦ÓÃÈÏÖ¤Ê§°Ü",
+						case NotifyPushService.ERROR_CONNECT_APP_CERTIFICATE: // åº”ç”¨è®¤è¯å¤±è´¥
+							Log.e(TAG_APILOG, "åº”ç”¨è®¤è¯å¤±è´¥ï¼");
+							Toast.makeText(MainActivity.this, "åº”ç”¨è®¤è¯å¤±è´¥",
 									Toast.LENGTH_SHORT).show();
 							break;
-						case NotifyPushService.ERROR_CONNECT_USER_CERTIFICATE: // ÓÃ»§ÈÏÖ¤Ê§°Ü
-							Log.e(TAG_APILOG, "ÓÃ»§ÈÏÖ¤Ê§°Ü£¡");
-							Toast.makeText(MainActivity.this, "ÓÃ»§ÈÏÖ¤Ê§°Ü",
+						case NotifyPushService.ERROR_CONNECT_USER_CERTIFICATE: // ç”¨æˆ·è®¤è¯å¤±è´¥
+							Log.e(TAG_APILOG, "ç”¨æˆ·è®¤è¯å¤±è´¥ï¼");
+							Toast.makeText(MainActivity.this, "ç”¨æˆ·è®¤è¯å¤±è´¥",
 									Toast.LENGTH_SHORT).show();
 							break;
-						case NotifyPushService.ERROR_CONNECT_SERVER: // ·şÎñÆ÷´íÎó
-							Log.e(TAG_APILOG, "·şÎñÆ÷´íÎó£¡");
-							Toast.makeText(MainActivity.this, "·şÎñÆ÷´íÎó",
+						case NotifyPushService.ERROR_CONNECT_SERVER: // æœåŠ¡å™¨é”™è¯¯
+							Log.e(TAG_APILOG, "æœåŠ¡å™¨é”™è¯¯ï¼");
+							Toast.makeText(MainActivity.this, "æœåŠ¡å™¨é”™è¯¯",
 									Toast.LENGTH_SHORT).show();
 							break;
 						default:
 							break;
 						}
 						break;
-					case NotifyPushService.LOG_SENDMSG: // ·¢ËÍÏûÏ¢:
+					case NotifyPushService.LOG_SENDMSG: // å‘é€æ¶ˆæ¯:
 						switch (code) {
-						case NotifyPushService.STATUS_SENDMSG_SUBMIT: // Ìá½»ÏûÏ¢
-							Log.i(TAG_APILOG, "Ìá½» #" + params + " ÏûÏ¢...");
-							Toast.makeText(MainActivity.this, "Ìá½»ÏûÏ¢...",
+						case NotifyPushService.STATUS_SENDMSG_SUBMIT: // æäº¤æ¶ˆæ¯
+							Log.i(TAG_APILOG, "æäº¤ #" + params + " æ¶ˆæ¯...");
+							Toast.makeText(MainActivity.this, "æäº¤æ¶ˆæ¯...",
 									Toast.LENGTH_SHORT).show();
 							break;
-						case NotifyPushService.STATUS_SENDMSG_SUBMITTED: // ÒÑÌá½»ÏûÏ¢
-							Log.i(TAG_APILOG, "#" + params + " ÏûÏ¢ÒÑÌá½»¡£");
-							Toast.makeText(MainActivity.this, "ÏûÏ¢ÒÑÌá½»",
+						case NotifyPushService.STATUS_SENDMSG_SUBMITTED: // å·²æäº¤æ¶ˆæ¯
+							Log.i(TAG_APILOG, "#" + params + " æ¶ˆæ¯å·²æäº¤ã€‚");
+							Toast.makeText(MainActivity.this, "æ¶ˆæ¯å·²æäº¤",
 									Toast.LENGTH_SHORT).show();
 							break;
-						case NotifyPushService.STATUS_SENDMSG_OK: // ÊÕµ½ÏûÏ¢È·ÈÏ
-							Log.i(TAG_APILOG, "#" + params + " ÏûÏ¢ÒÑÈ·ÈÏ¡£");
-							Toast.makeText(MainActivity.this, "ÏûÏ¢ÒÑÈ·ÈÏ",
+						case NotifyPushService.STATUS_SENDMSG_OK: // æ”¶åˆ°æ¶ˆæ¯ç¡®è®¤
+							Log.i(TAG_APILOG, "#" + params + " æ¶ˆæ¯å·²ç¡®è®¤ã€‚");
+							Toast.makeText(MainActivity.this, "æ¶ˆæ¯å·²ç¡®è®¤",
 									Toast.LENGTH_SHORT).show();
 							break;
-						case NotifyPushService.ERROR_SENDMSG_NOT_LOGON: // ÉĞÎ´µÇÂ¼³É¹¦
-							Toast.makeText(MainActivity.this, "ÉĞÎ´³É¹¦µÇÂ¼",
+						case NotifyPushService.ERROR_SENDMSG_NOT_LOGON: // å°šæœªç™»å½•æˆåŠŸ
+							Toast.makeText(MainActivity.this, "å°šæœªæˆåŠŸç™»å½•",
 									Toast.LENGTH_SHORT).show();
 							break;
-						case NotifyPushService.ERROR_SENDMSG_DATA: // ÏûÏ¢Êı¾İ´íÎó
-							Log.e(TAG_APILOG, "#" + params + " ÏûÏ¢Êı¾İ´íÎó£¡");
+						case NotifyPushService.ERROR_SENDMSG_DATA: // æ¶ˆæ¯æ•°æ®é”™è¯¯
+							Log.e(TAG_APILOG, "#" + params + " æ¶ˆæ¯æ•°æ®é”™è¯¯ï¼");
 							break;
-						case NotifyPushService.ERROR_SENDMSG_SUBMIT: // Ìá½»ÏûÏ¢Ê§°Ü
-							Log.w(TAG_APILOG, "#" + params + " ÏûÏ¢Ìá½»Ê§°Ü¡£");
-							Toast.makeText(MainActivity.this, "ÏûÏ¢Ìá½»Ê§°Ü",
+						case NotifyPushService.ERROR_SENDMSG_SUBMIT: // æäº¤æ¶ˆæ¯å¤±è´¥
+							Log.w(TAG_APILOG, "#" + params + " æ¶ˆæ¯æäº¤å¤±è´¥ã€‚");
+							Toast.makeText(MainActivity.this, "æ¶ˆæ¯æäº¤å¤±è´¥",
 									Toast.LENGTH_SHORT).show();
 							break;
-						case NotifyPushService.ERROR_SENDMSG_FAILED: // ·¢ËÍÏûÏ¢Ê§°Ü
+						case NotifyPushService.ERROR_SENDMSG_FAILED: // å‘é€æ¶ˆæ¯å¤±è´¥
 							int pos = params.indexOf(":");
 							String msgId = params.substring(0, pos);
 							String err = params.substring(pos + 1);
 							String errmsg = err.substring(err.indexOf(",") + 1);
-							Log.w(TAG_APILOG, "#" + msgId + " ÏûÏ¢·¢ËÍÊ§°Ü(" + errmsg
-									+ ")£¡");
-							Toast.makeText(MainActivity.this, "ÏûÏ¢·¢ËÍÊ§°Ü",
+							Log.w(TAG_APILOG, "#" + msgId + " æ¶ˆæ¯å‘é€å¤±è´¥(" + errmsg
+									+ ")ï¼");
+							Toast.makeText(MainActivity.this, "æ¶ˆæ¯å‘é€å¤±è´¥",
 									Toast.LENGTH_SHORT).show();
 							break;
 						default:
@@ -208,7 +209,7 @@ public class MainActivity extends Activity {
 						break;
 					}
 				} else if (action.equals("status")) {
-					// ÏìÓ¦ÏûÏ¢½ÓÊÕÆ÷×´Ì¬±ä»¯
+					// å“åº”æ¶ˆæ¯æ¥æ”¶å™¨çŠ¶æ€å˜åŒ–
 					boolean receiverStarted = intent.getBooleanExtra("started",
 							false);
 					MyApplicationClass.clientStarted = receiverStarted;
@@ -220,11 +221,11 @@ public class MainActivity extends Activity {
 					Toast.makeText(MainActivity.this, log, Toast.LENGTH_SHORT)
 							.show();
 				} else if (action.equals("logining")) {
-					// ÏìÓ¦µÇÂ¼×´Ì¬±ä»¯
+					// å“åº”ç™»å½•çŠ¶æ€å˜åŒ–
 					boolean logining = intent
 							.getBooleanExtra("logining", false);
 					if (logining) {
-						Toast.makeText(MainActivity.this, "ÕıÔÚµÇÂ¼...",
+						Toast.makeText(MainActivity.this, "æ­£åœ¨ç™»å½•...",
 								Toast.LENGTH_SHORT).show();
 					}
 					ActionBar actionBar = (ActionBar) findViewById(R.id.actionbar);
@@ -259,7 +260,7 @@ public class MainActivity extends Activity {
 	}
 
 	private static final SimpleDateFormat sdf = new SimpleDateFormat(
-			"yyyyÄêMMÔÂddÈÕ", Locale.CHINESE);
+			"yyyyå¹´MMæœˆddæ—¥", Locale.CHINESE);
 
 	private static final int MAX_MSG_COUNT = 20;
 	private LinearLayout msg;
@@ -287,14 +288,14 @@ public class MainActivity extends Activity {
 				SendMessageActivity.class), R.drawable.send_message);
 		actionBar.addAction(sendMessageAction);
 
-		// ×¼±¸Í¨Öª
+		// å‡†å¤‡é€šçŸ¥
 		mNM = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 
-		// ³õÊ¼»¯ÏûÏ¢ºÍÈÕÖ¾¿Ø¼ş
+		// åˆå§‹åŒ–æ¶ˆæ¯å’Œæ—¥å¿—æ§ä»¶
 		msg = (LinearLayout) findViewById(R.id.msg);
 
 		if (myBroadcastReceiver == null) {
-			// ×¼±¸ÓëºóÌ¨·şÎñÍ¨ĞÅ
+			// å‡†å¤‡ä¸åå°æœåŠ¡é€šä¿¡
 			myBroadcastReceiver = new MyBroadcastReceiver();
 			try {
 				unregisterReceiver(myBroadcastReceiver);
@@ -308,14 +309,14 @@ public class MainActivity extends Activity {
 			filter.addAction(MESSAGE_SEND_CLASSNAME);
 			registerReceiver(myBroadcastReceiver, filter);
 
-			// Æô¶¯ÏûÏ¢½ÓÊÕÆ÷
+			// å¯åŠ¨æ¶ˆæ¯æ¥æ”¶å™¨
 			Handler handler = new Handler();
 			Runnable runnable = new Runnable() {
 				public void run() {
 					startMessageReceiver();
 				}
 			};
-			handler.postDelayed(runnable, 1000); // Æô¶¯Timer
+			handler.postDelayed(runnable, 1000); // å¯åŠ¨Timer
 		}
 	}
 
@@ -334,7 +335,7 @@ public class MainActivity extends Activity {
 		Resources res = getResources();
 
 		for (MyMessage message : MyApplicationClass.savedMsgs) {
-			// »ñÈ¡Í¼Æ¬URL
+			// è·å–å›¾ç‰‡URL
 			String senderIconUrl = null;
 			String msgAttachmentUrl = null;
 			if (message.getAttachments() != null) {
@@ -352,14 +353,19 @@ public class MainActivity extends Activity {
 			if (senderIcon == null) {
 				senderIcon = BitmapFactory.decodeResource(MainActivity.this
 						.getResources(),
-						(message.getSender().equals("ÎÒ") ? R.drawable.send
+						(message.getSender().equals("æˆ‘") ? R.drawable.send
 								: R.drawable.avatar));
 			}
 			Bitmap msgAttachment = (msgAttachmentUrl != null ? MyApplicationClass.savedImages
 					.get(msgAttachmentUrl) : null);
+			if (msgCount != 0) {
+				// åŠ æ¶ˆæ¯åˆ†éš”æ¡
+				msg.addView(makeMessageSepView(), 0);
+			}
 			msg.addView(
 					makeMessageView(now, message, senderIcon, msgAttachment,
 							res), 0);
+			msgCount++;
 		}
 		super.onConfigurationChanged(newConfig);
 	}
@@ -387,15 +393,15 @@ public class MainActivity extends Activity {
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch (item.getItemId()) {
 		case R.id.menu_start:
-			// Æô¶¯ÏûÏ¢½ÓÊÕÆ÷
+			// å¯åŠ¨æ¶ˆæ¯æ¥æ”¶å™¨
 			startMessageReceiver();
 			break;
 		case R.id.menu_stop:
-			// Í£Ö¹ÏûÏ¢½ÓÊÕÆ÷
+			// åœæ­¢æ¶ˆæ¯æ¥æ”¶å™¨
 			stopMessageReceiver();
 			break;
 		case R.id.menu_settings:
-			// ´ò¿ªÉèÖÃ½çÃæ
+			// æ‰“å¼€è®¾ç½®ç•Œé¢
 			startActivity(new Intent(this, SettingsActivity.class));
 			break;
 		}
@@ -408,7 +414,7 @@ public class MainActivity extends Activity {
 		switch (keyCode) {
 		case KeyEvent.KEYCODE_BACK: {
 			if (event.isLongPress()) {
-				// ÍË³ö³ÌĞò
+				// é€€å‡ºç¨‹åº
 				mNM.cancel(R.id.app_notification_id);
 				//
 				stopService(new Intent(MainActivity.this,
@@ -418,7 +424,7 @@ public class MainActivity extends Activity {
 				System.exit(0);
 				return true;
 			} else {
-				// ÌáÊ¾ÍË³ö
+				// æç¤ºé€€å‡º
 				Toast.makeText(this, getText(R.string.app_exit),
 						Toast.LENGTH_SHORT).show();
 				boolean flag = false;
@@ -439,22 +445,13 @@ public class MainActivity extends Activity {
 		anim.setRepeatCount(0);
 		v.startAnimation(anim);
 		//
-		menu.add(0, MESSAGE_REPLY, 0, "»Ø¸´");
+		menu.add(0, MESSAGE_REPLY, 0, "å›å¤");
 	}
 
 	@Override
 	public boolean onContextItemSelected(MenuItem item) {
 		switch (item.getItemId()) {
 		case MESSAGE_REPLY:
-			/*
-			 * TextView msgTitleView = (TextView) item.getActionView()
-			 * .findViewById(R.id.msgTitle); //
-			 * item.getActionView().setBackgroundColor(Color.RED); String title
-			 * = msgTitleView.getText().toString(); title = title.substring(0,
-			 * title.length() - 1); // Intent i = new Intent(MainActivity.this,
-			 * SendMessageActivity.class); i.putExtra("receiver", title);
-			 * startActivity(i);
-			 */
 			break;
 		}
 		return true;
@@ -467,7 +464,7 @@ public class MainActivity extends Activity {
 		Toast.makeText(this, getText(R.string.receiver_starting),
 				Toast.LENGTH_SHORT).show();
 
-		// »ñÈ¡×îĞÂÉèÖÃ
+		// è·å–æœ€æ–°è®¾ç½®
 		String clientPassword = MyApplicationClass.userSettings
 				.getClientPassword().trim();
 		if (clientPassword.equals("")) {
@@ -512,7 +509,7 @@ public class MainActivity extends Activity {
 	@SuppressLint("HandlerLeak")
 	private void showNotification(String msgText) {
 
-		// ½âÎöÏûÏ¢ÎÄ±¾
+		// è§£ææ¶ˆæ¯æ–‡æœ¬
 		final MyMessage message;
 		try {
 			message = MyMessage.extractMessage(msgText);
@@ -521,11 +518,11 @@ public class MainActivity extends Activity {
 		}
 
 		if (message.getGenerateTime() == null) {
-			Log.w(TAG_MAINLOG, "½ÓÊÕµ½Ã»ÓĞÉú³ÉÊ±¼äµÄÏûÏ¢£º" + msgText);
+			Log.w(TAG_MAINLOG, "æ¥æ”¶åˆ°æ²¡æœ‰ç”Ÿæˆæ—¶é—´çš„æ¶ˆæ¯ï¼š" + msgText);
 			return;
 		}
 
-		// »ñÈ¡Í¼Æ¬URL¼°ÎÄ¼şÃû
+		// è·å–å›¾ç‰‡URLåŠæ–‡ä»¶å
 		String senderIconUrl = null;
 		String msgAttachmentUrl = null;
 		if (message.getAttachments() != null) {
@@ -539,7 +536,7 @@ public class MainActivity extends Activity {
 			}
 		}
 
-		// ÎªÏûÏ¢¶Ô»°¿ò×¼±¸Êı¾İ
+		// ä¸ºæ¶ˆæ¯å¯¹è¯æ¡†å‡†å¤‡æ•°æ®
 		final Bundle msgParams = new Bundle();
 		msgParams.putBoolean("alert", MyApplicationClass.ALERT_MSG);
 		if (message.getSender() != null)
@@ -578,13 +575,13 @@ public class MainActivity extends Activity {
 						} else {
 							msgParams.putBoolean("showAttachment", false);
 						}
-						// Ìí¼Óµ½ÏûÏ¢ÁĞ±í
+						// æ·»åŠ åˆ°æ¶ˆæ¯åˆ—è¡¨
 						showMsg(message, senderIcon, msgAttachment);
 						if (MyApplicationClass.userSettings.isPopupMsg()) {
-							// ÏÔÊ¾/¸üĞÂÏûÏ¢¶Ô»°¿ò
+							// æ˜¾ç¤º/æ›´æ–°æ¶ˆæ¯å¯¹è¯æ¡†
 							messageDialogIntent.putExtras(msgParams);
 							if (messagePopupClosed) {
-								// ÉùÒôÌáĞÑ
+								// å£°éŸ³æé†’
 								if (MyApplicationClass.userSettings
 										.isPlaySound()) {
 									MyApplicationClass.playSoundPool
@@ -592,11 +589,11 @@ public class MainActivity extends Activity {
 													: MyApplicationClass.INFO_SOUND,
 													0);
 								}
-								// ÏÔÊ¾ÏûÏ¢¶Ô»°¿ò
+								// æ˜¾ç¤ºæ¶ˆæ¯å¯¹è¯æ¡†
 								startActivity(messageDialogIntent);
 								messagePopupClosed = false;
 							} else {
-								// ¸üĞÂÏûÏ¢¶Ô»°¿ò
+								// æ›´æ–°æ¶ˆæ¯å¯¹è¯æ¡†
 								messageDialogIntent.setAction(MY_CLASSNAME);
 								messageDialogIntent
 										.putExtra("action", "update");
@@ -653,25 +650,25 @@ public class MainActivity extends Activity {
 				}
 			}.start();
 		} else {
-			// Ìí¼Óµ½ÏûÏ¢ÁĞ±í
+			// æ·»åŠ åˆ°æ¶ˆæ¯åˆ—è¡¨
 			showMsg(message, null, null);
 			if (MyApplicationClass.userSettings.isPopupMsg()) {
-				// ÏÔÊ¾/¸üĞÂÏûÏ¢¶Ô»°¿ò
+				// æ˜¾ç¤º/æ›´æ–°æ¶ˆæ¯å¯¹è¯æ¡†
 				msgParams.putBoolean("showIcon", false);
 				msgParams.putBoolean("showAttachment", false);
 				messageDialogIntent.putExtras(msgParams);
 				if (messagePopupClosed) {
-					// ÉùÒôÌáĞÑ
+					// å£°éŸ³æé†’
 					if (MyApplicationClass.userSettings.isPlaySound()) {
 						MyApplicationClass.playSoundPool
 								.play(MyApplicationClass.ALERT_MSG ? MyApplicationClass.ALERT_SOUND
 										: MyApplicationClass.INFO_SOUND, 0);
 					}
-					// ÏÔÊ¾ÏûÏ¢¶Ô»°¿ò
+					// æ˜¾ç¤ºæ¶ˆæ¯å¯¹è¯æ¡†
 					startActivity(messageDialogIntent);
 					messagePopupClosed = false;
 				} else {
-					// ¸üĞÂÏûÏ¢¶Ô»°¿ò
+					// æ›´æ–°æ¶ˆæ¯å¯¹è¯æ¡†
 					messageDialogIntent.setAction(MY_CLASSNAME);
 					messageDialogIntent.putExtra("action", "update");
 					sendBroadcast(messageDialogIntent);
@@ -685,29 +682,35 @@ public class MainActivity extends Activity {
 		Date now = new Date();
 		Resources res = getResources();
 
-		// Éú³ÉÏûÏ¢½çÃæ
+		// ç”Ÿæˆæ¶ˆæ¯ç•Œé¢
 		View view = makeMessageView(
 				now,
 				message,
 				senderIcon == null ? BitmapFactory.decodeResource(
 						MainActivity.this.getResources(), R.drawable.avatar)
 						: senderIcon, msgAttachment, res);
+		if (msgCount != 0) {
+			// åŠ æ¶ˆæ¯åˆ†éš”æ¡
+			msg.addView(makeMessageSepView(), 0);
+		}
 		msg.addView(view, 0);
-		if (msg.getChildCount() > MAX_MSG_COUNT) {
-			msg.removeViewAt(MAX_MSG_COUNT);
+		if (msgCount == MAX_MSG_COUNT) {
+			msg.removeViewAt(MAX_MSG_COUNT * 2 - 1);
+			msg.removeViewAt(MAX_MSG_COUNT * 2 - 1);
+		} else {
+			msgCount++;
 		}
 
-		// ±£´æÏûÏ¢
+		// ä¿å­˜æ¶ˆæ¯
 		if (MyApplicationClass.savedMsgs.size() == MAX_MSG_COUNT) {
 			MyApplicationClass.savedMsgs.remove(0);
 		}
 		MyApplicationClass.savedMsgs.add(message);
 
-		// ¸üĞÂ¾ÉÏûÏ¢µÄÉú³ÉÊ±¼ä
-		for (int i = 1; i < msg.getChildCount(); i++) {
-			message = MyApplicationClass.savedMsgs.get(msg.getChildCount() - i
-					- 1);
-			View listItemView = msg.getChildAt(i);
+		// æ›´æ–°æ—§æ¶ˆæ¯çš„ç”Ÿæˆæ—¶é—´
+		for (int i = 1; i < msgCount; i++) {
+			message = MyApplicationClass.savedMsgs.get(msgCount - i - 1);
+			View listItemView = msg.getChildAt(i * 2);
 			TextView msgTimeView = (TextView) listItemView
 					.findViewById(R.id.msgTime);
 			msgTimeView.setText(makeTimeString(now, message.getGenerateTime()));
@@ -719,7 +722,7 @@ public class MainActivity extends Activity {
 			Bitmap senderIcon, Bitmap msgAttachment, Resources res) {
 		LayoutInflater inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
 		final View listItemView = inflater.inflate(R.layout.message_list_item,
-				(ViewGroup) findViewById(R.id.message));
+				null);
 		ImageView msgSenderView = (ImageView) listItemView
 				.findViewById(R.id.msgSender);
 		msgSenderView.setImageBitmap(senderIcon);
@@ -763,32 +766,38 @@ public class MainActivity extends Activity {
 				.findViewById(R.id.msgTime);
 		msgTimeView.setText(makeTimeString(now, message.getGenerateTime()));
 		//
-		if (message.getSender() != null && !message.getSender().equals("ÎÒ")) {
+		if (message.getSender() != null && !message.getSender().equals("æˆ‘")) {
 			registerForContextMenu(listItemView);
 		}
 		return listItemView;
+	}
+
+	private View makeMessageSepView() {
+		LayoutInflater inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
+		View sepView = inflater.inflate(R.layout.message_list_sep, null);
+		return sepView;
 	}
 
 	private String makeTimeString(Date now, Date time) {
 		String str;
 		long diffInSeconds = (now.getTime() - time.getTime()) / 1000;
 		if (diffInSeconds < 60) {
-			str = "¸Õ¸Õ";
+			str = "åˆšåˆš";
 		} else if (diffInSeconds < 60 * 60) {
-			str = (diffInSeconds / 60) + "·ÖÖÓÇ°";
+			str = (diffInSeconds / 60) + "åˆ†é’Ÿå‰";
 		} else if (diffInSeconds < 60 * 60 * 24) {
-			str = (diffInSeconds / (60 * 60)) + "Ğ¡Ê±Ç°";
+			str = (diffInSeconds / (60 * 60)) + "å°æ—¶å‰";
 		} else if (diffInSeconds < 60 * 60 * 24 * 30) {
 			long days = diffInSeconds / (60 * 60 * 24);
 			switch ((int) days) {
 			case 1:
-				str = "×òÌì";
+				str = "æ˜¨å¤©";
 				break;
 			case 2:
-				str = "Ç°Ìì";
+				str = "å‰å¤©";
 				break;
 			default:
-				str = (days) + "ÌìÇ°";
+				str = (days) + "å¤©å‰";
 				break;
 			}
 		} else {
