@@ -17,12 +17,14 @@ public class UserSettings {
 	public static final int DEFAULT_SERVER_PORT = 1234; // 默认服务端口
 	private static final String DEFAULT_CLIENT_ID = "00000000000"; // 默认账号名称
 
-	private static final boolean DEFAULT_PLAY_SOUND = true; // 默认声音提醒状态
+	private static final boolean DEFAULT_POPUP_MSG = true; // 默认弹出消息状态
+	private static final boolean DEFAULT_PLAY_SOUND = true; // 默认声音提醒状态（仅在允许弹出消息时有效）
 
 	private String serverHost; // 服务器地址
 	private int serverPort; // 服务器端口
 	private String clientId; // 客户ID
 	private String clientPassword; // 客户密码
+	private boolean popupMsg; // 弹出消息
 	private boolean playSound; // 声音提醒
 
 	public UserSettings(Context context) {
@@ -45,6 +47,10 @@ public class UserSettings {
 		return clientPassword;
 	}
 
+	public boolean isPopupMsg() {
+		return popupMsg;
+	}
+
 	public boolean isPlaySound() {
 		return playSound;
 	}
@@ -61,6 +67,7 @@ public class UserSettings {
 		}
 		clientPassword = prefs.getString("clientPassword", "");
 
+		popupMsg = prefs.getBoolean("popupMsg", DEFAULT_POPUP_MSG);
 		playSound = prefs.getBoolean("playSound", DEFAULT_PLAY_SOUND);
 	}
 

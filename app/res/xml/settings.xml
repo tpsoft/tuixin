@@ -36,10 +36,16 @@
         
         <CheckBoxPreference
             android:defaultValue="true"
+            android:key="popupMsg"
+            android:persistent="true"
+            android:summary="@string/popup_msg_summary"
+            android:title="@string/popup_msg" />
+        <CheckBoxPreference
+            android:defaultValue="true"
             android:key="playSound"
             android:persistent="true"
             android:summary="@string/play_sound_summary"
             android:title="@string/play_sound" />
-    </PreferenceCategory>
+        </PreferenceCategory>
 
 </PreferenceScreen>

@@ -22,6 +22,7 @@ public class SettingsActivity extends PreferenceActivity implements
 		EditTextPreference prefServerHost = (EditTextPreference) findPreference("serverHost");
 		EditTextPreference prefServerPort = (EditTextPreference) findPreference("serverPort");
 		EditTextPreference prefClientId = (EditTextPreference) findPreference("clientId");
+		CheckBoxPreference prefPopupMsg = (CheckBoxPreference) findPreference("popupMsg");
 		CheckBoxPreference prefPlaySound = (CheckBoxPreference) findPreference("playSound");
 
 		// 生成客户端标识(电话号码)
@@ -36,12 +37,14 @@ public class SettingsActivity extends PreferenceActivity implements
 		prefServerHost.setSummary(prefServerHost.getText());
 		prefServerPort.setSummary(prefServerPort.getText());
 		prefClientId.setSummary(prefClientId.getText());
+		updateSummary(prefPopupMsg, prefPopupMsg.isChecked());
 		updateSummary(prefPlaySound, prefPlaySound.isChecked());
 
 		// 允许监听值改变事件
 		prefServerHost.setOnPreferenceChangeListener(this);
 		prefServerPort.setOnPreferenceChangeListener(this);
 		prefClientId.setOnPreferenceChangeListener(this);
+		prefPopupMsg.setOnPreferenceChangeListener(this);
 		prefPlaySound.setOnPreferenceChangeListener(this);
 	}
 
@@ -52,7 +55,8 @@ public class SettingsActivity extends PreferenceActivity implements
 	}
 
 	private void updateSummary(Preference preference, Object newValue) {
-		if (preference.getKey().equals("playSound")) {
+		if (preference.getKey().equals("popupMsg")
+				|| preference.getKey().equals("playSound")) {
 			preference.setSummary((Boolean) newValue ? "允许" : "禁止");
 		} else {
 			preference.setSummary(newValue.toString());

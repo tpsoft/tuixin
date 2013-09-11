@@ -14,6 +14,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
@@ -338,10 +339,12 @@ public class MessageDialog extends Activity implements OnTouchListener,
 		// ͼƬ
 		final ImageView msgAttachment = (ImageView) notifyView
 				.findViewById(R.id.msgAttachment);
-		Bitmap bitmap = null;
+		Bitmap bitmap;
 		if (msgBundle.getBoolean("showPic")) {
 			bitmap = MyApplicationClass.savedImages.get(msgBundle
 					.getString("picUrl"));
+		} else {
+			bitmap = BitmapFactory.decodeResource(MessageDialog.this.getResources(), R.drawable.avatar);
 		}
 		msgAttachment.setImageBitmap(bitmap);
 	}

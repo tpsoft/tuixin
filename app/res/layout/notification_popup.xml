@@ -43,6 +43,7 @@
                 android:layout_marginRight="36dp"
                 android:layout_toRightOf="@id/msgIndex"
                 android:fontFamily="黑体"
+                android:minLines="2"
                 android:maxLines="2"
                 android:text="@string/msg_title"
                 android:textColor="#382d24"
@@ -81,7 +82,7 @@
             android:contentDescription="@string/msg_attachment"
             android:cropToPadding="true"
             android:scaleType="fitStart"
-            android:src="@drawable/ic_launcher" />
+            android:src="@drawable/avatar" />
     </LinearLayout>
 
 </LinearLayout>

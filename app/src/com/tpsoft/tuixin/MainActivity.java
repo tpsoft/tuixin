@@ -24,12 +24,16 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
+import android.view.ContextMenu;
+import android.view.ContextMenu.ContextMenuInfo;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.AlphaAnimation;
+import android.view.animation.Animation;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -53,6 +57,8 @@ public class MainActivity extends Activity {
 
 	public static final String TAG_APILOG = "PushNotification-API";
 	public static final String TAG_MAINLOG = "MAIN";
+
+	private static final int MESSAGE_REPLY = Menu.FIRST;
 
 	private class MyBroadcastReceiver extends BroadcastReceiver {
 
@@ -93,7 +99,7 @@ public class MainActivity extends Activity {
 							Log.i(TAG_APILOG, "收到消息密钥。");
 							break;
 						case NotifyPushService.STATUS_CONNECT_KEEPALIVEINTERVAL_RECEIVED: // 收到心跳周期
-							Log.d(TAG_APILOG,
+							Log.i(TAG_APILOG,
 									"收到心跳周期: " + Integer.parseInt(params)
 											/ 1000 + "秒。");
 							break;
@@ -237,7 +243,9 @@ public class MainActivity extends Activity {
 				if (action.equals("sent")) {
 					try {
 						showMsg(new MyMessage(intent.getBundleExtra("message")),
-								null);
+								BitmapFactory.decodeResource(
+										MainActivity.this.getResources(),
+										R.drawable.send));
 					} catch (ParseException e) {
 						e.printStackTrace();
 					}
@@ -249,12 +257,10 @@ public class MainActivity extends Activity {
 	}
 
 	private static final SimpleDateFormat sdf = new SimpleDateFormat(
-			"yyyy年MM月dd日 HH:mm:ss", Locale.CHINESE);
+			"yyyy年MM月dd日", Locale.CHINESE);
 
 	private static final int MAX_MSG_COUNT = 20;
 	private LinearLayout msg;
-	private int msgCount = 0;
-	private boolean useMsgColor1 = true;
 
 	private NotificationManager mNM;
 	private MyBroadcastReceiver myBroadcastReceiver = null;
@@ -270,13 +276,13 @@ public class MainActivity extends Activity {
 		MyApplicationClass myApp = (MyApplicationClass) getApplication();
 		myApp.loadUserSettings();
 
-		final ActionBar actionBar = (ActionBar) findViewById(R.id.actionbar);
+		ActionBar actionBar = (ActionBar) findViewById(R.id.actionbar);
 		actionBar.setHomeAction(new IntentAction(MainActivity.this,
 				createIntent(this), R.drawable.home_logo));
 		// actionBar.setHomeLogo(R.drawable.ic_launcher);
 		actionBar.setTitle(R.string.app_name);
-		final Action sendMessageAction = new IntentAction(this, new Intent(
-				this, SendMessageActivity.class), R.drawable.send_message);
+		Action sendMessageAction = new IntentAction(this, new Intent(this,
+				SendMessageActivity.class), R.drawable.send_message);
 		actionBar.addAction(sendMessageAction);
 
 		// 准备通知
@@ -336,12 +342,14 @@ public class MainActivity extends Activity {
 					}
 				}
 			}
-			msg.addView(
-					makeMessageView(
-							now,
-							message,
-							(imageUrl != null ? MyApplicationClass.savedImages
-									.get(imageUrl) : null), res), 0);
+			Bitmap image = (imageUrl != null ? MyApplicationClass.savedImages
+					.get(imageUrl) : null);
+			if (image == null)
+				image = BitmapFactory.decodeResource(MainActivity.this
+						.getResources(),
+						(message.getSender().equals("我") ? R.drawable.send
+								: R.drawable.avatar));
+			msg.addView(makeMessageView(now, message, image, res), 0);
 		}
 		super.onConfigurationChanged(newConfig);
 	}
@@ -411,6 +419,37 @@ public class MainActivity extends Activity {
 		return super.dispatchKeyEvent(event);
 	}
 
+	@Override
+	public void onCreateContextMenu(ContextMenu menu, View v,
+			ContextMenuInfo menuInfo) {
+		Animation anim = new AlphaAnimation(0.0f, 1.0f);
+		anim.setDuration(500);
+		anim.setStartOffset(0);
+		anim.setRepeatMode(Animation.REVERSE);
+		anim.setRepeatCount(0);
+		v.startAnimation(anim);
+		//
+		menu.add(0, MESSAGE_REPLY, 0, "回复");
+	}
+
+	@Override
+	public boolean onContextItemSelected(MenuItem item) {
+		switch (item.getItemId()) {
+		case MESSAGE_REPLY:
+			/*TextView msgTitleView = (TextView) item.getActionView()
+					.findViewById(R.id.msgTitle);
+			// item.getActionView().setBackgroundColor(Color.RED);
+			String title = msgTitleView.getText().toString();
+			title = title.substring(0, title.length() - 1);
+			//
+			Intent i = new Intent(MainActivity.this, SendMessageActivity.class);
+			i.putExtra("receiver", title);
+			startActivity(i);*/
+			break;
+		}
+		return true;
+	}
+
 	private void startMessageReceiver() {
 		if (MyApplicationClass.clientStarted)
 			return;
@@ -471,6 +510,11 @@ public class MainActivity extends Activity {
 			return;
 		}
 
+		if (message.getGenerateTime() == null) {
+			Log.w(TAG_MAINLOG, "接收到没有生成时间的消息：" + msgText);
+			return;
+		}
+
 		// 获取图片URL及文件名
 		// String attachmentFilename = null;
 		String attachmentUrl = null;
@@ -516,24 +560,28 @@ public class MainActivity extends Activity {
 						}
 						// 添加到消息列表
 						showMsg(message, image);
-						// 显示/更新消息对话框
-						messageDialogIntent.putExtras(msgParams);
-						if (messagePopupClosed) {
-							// 声音提醒
-							if (MyApplicationClass.userSettings.isPlaySound()) {
-								MyApplicationClass.playSoundPool
-										.play(MyApplicationClass.ALERT_MSG ? MyApplicationClass.ALERT_SOUND
-												: MyApplicationClass.INFO_SOUND,
-												0);
+						if (MyApplicationClass.userSettings.isPopupMsg()) {
+							// 显示/更新消息对话框
+							messageDialogIntent.putExtras(msgParams);
+							if (messagePopupClosed) {
+								// 声音提醒
+								if (MyApplicationClass.userSettings
+										.isPlaySound()) {
+									MyApplicationClass.playSoundPool
+											.play(MyApplicationClass.ALERT_MSG ? MyApplicationClass.ALERT_SOUND
+													: MyApplicationClass.INFO_SOUND,
+													0);
+								}
+								// 显示消息对话框
+								startActivity(messageDialogIntent);
+								messagePopupClosed = false;
+							} else {
+								// 更新消息对话框
+								messageDialogIntent.setAction(MY_CLASSNAME);
+								messageDialogIntent
+										.putExtra("action", "update");
+								sendBroadcast(messageDialogIntent);
 							}
-							// 显示消息对话框
-							startActivity(messageDialogIntent);
-							messagePopupClosed = false;
-						} else {
-							// 更新消息对话框
-							messageDialogIntent.setAction(MY_CLASSNAME);
-							messageDialogIntent.putExtra("action", "update");
-							sendBroadcast(messageDialogIntent);
 						}
 						break;
 					default:
@@ -568,24 +616,26 @@ public class MainActivity extends Activity {
 		} else {
 			// 添加到消息列表
 			showMsg(message, null);
-			// 显示/更新消息对话框
-			msgParams.putBoolean("showPic", false);
-			messageDialogIntent.putExtras(msgParams);
-			if (messagePopupClosed) {
-				// 声音提醒
-				if (MyApplicationClass.userSettings.isPlaySound()) {
-					MyApplicationClass.playSoundPool
-							.play(MyApplicationClass.ALERT_MSG ? MyApplicationClass.ALERT_SOUND
-									: MyApplicationClass.INFO_SOUND, 0);
+			if (MyApplicationClass.userSettings.isPopupMsg()) {
+				// 显示/更新消息对话框
+				msgParams.putBoolean("showPic", false);
+				messageDialogIntent.putExtras(msgParams);
+				if (messagePopupClosed) {
+					// 声音提醒
+					if (MyApplicationClass.userSettings.isPlaySound()) {
+						MyApplicationClass.playSoundPool
+								.play(MyApplicationClass.ALERT_MSG ? MyApplicationClass.ALERT_SOUND
+										: MyApplicationClass.INFO_SOUND, 0);
+					}
+					// 显示消息对话框
+					startActivity(messageDialogIntent);
+					messagePopupClosed = false;
+				} else {
+					// 更新消息对话框
+					messageDialogIntent.setAction(MY_CLASSNAME);
+					messageDialogIntent.putExtra("action", "update");
+					sendBroadcast(messageDialogIntent);
 				}
-				// 显示消息对话框
-				startActivity(messageDialogIntent);
-				messagePopupClosed = false;
-			} else {
-				// 更新消息对话框
-				messageDialogIntent.setAction(MY_CLASSNAME);
-				messageDialogIntent.putExtra("action", "update");
-				sendBroadcast(messageDialogIntent);
 			}
 		}
 	}
@@ -595,34 +645,32 @@ public class MainActivity extends Activity {
 		Resources res = getResources();
 
 		// 生成消息界面
-		View view = makeMessageView(now, message, image, res);
-		if (msgCount < MAX_MSG_COUNT) {
-			msg.addView(view, 0);
-			msgCount++;
-		} else {
-			msg.removeViewAt(msg.getChildCount() - 1);
-			msg.addView(view, 0);
+		View view = makeMessageView(
+				now,
+				message,
+				image == null ? BitmapFactory.decodeResource(
+						MainActivity.this.getResources(), R.drawable.avatar)
+						: image, res);
+		msg.addView(view, 0);
+		if (msg.getChildCount() > MAX_MSG_COUNT) {
+			msg.removeViewAt(MAX_MSG_COUNT);
 		}
 
 		// 保存消息
-		MyApplicationClass.savedMsgs.add(message);
 		if (MyApplicationClass.savedMsgs.size() == MAX_MSG_COUNT) {
 			MyApplicationClass.savedMsgs.remove(0);
 		}
+		MyApplicationClass.savedMsgs.add(message);
 
-		if (msgCount > 1) {
-			// 更新旧消息的生成时间
-			for (int i = 1; i < msgCount; i++) {
-				message = MyApplicationClass.savedMsgs.get(msgCount - i - 1);
-				View listItemView = msg.getChildAt(i);
-				TextView msgTimeView = (TextView) listItemView
-						.findViewById(R.id.msgTime);
-				msgTimeView.setText(makeTimeString(now,
-						message.getGenerateTime()));
-			}
+		// 更新旧消息的生成时间
+		for (int i = 1; i < msg.getChildCount(); i++) {
+			message = MyApplicationClass.savedMsgs.get(msg.getChildCount() - i
+					- 1);
+			View listItemView = msg.getChildAt(i);
+			TextView msgTimeView = (TextView) listItemView
+					.findViewById(R.id.msgTime);
+			msgTimeView.setText(makeTimeString(now, message.getGenerateTime()));
 		}
-
-		useMsgColor1 = !useMsgColor1;
 	}
 
 	@SuppressLint("ResourceAsColor")
@@ -669,6 +717,10 @@ public class MainActivity extends Activity {
 		TextView msgTimeView = (TextView) listItemView
 				.findViewById(R.id.msgTime);
 		msgTimeView.setText(makeTimeString(now, message.getGenerateTime()));
+		//
+		if (message.getSender() != null && !message.getSender().equals("我")) {
+			registerForContextMenu(listItemView);
+		}
 		return listItemView;
 	}
 
