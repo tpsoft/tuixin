@@ -14,7 +14,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
@@ -307,21 +306,21 @@ public class MessageDialog extends Activity implements OnTouchListener,
 		if (msgBundle.containsKey("title"))
 			msgTitle.setText(msgBundle.getString("title"));
 		else if (msgBundle.containsKey("sender"))
-			msgTitle.setText(msgBundle.getString("sender")+": ");
+			msgTitle.setText(msgBundle.getString("sender") + ": ");
 		else
 			msgTitle.setText(R.string.msg_notitle);
 		if (msgBundle.containsKey("url")) {
 			final String url = msgBundle.getString("url");
-			if (url!=null && !url.equals("")) {
+			if (url != null && !url.equals("")) {
 				msgTitle.setClickable(true);
 				msgTitle.setTextColor(Color.BLUE);
 				msgTitle.setOnClickListener(new View.OnClickListener() {
-	
+
 					@Override
 					public void onClick(View view) {
 						try {
-							Intent browserIntent = new Intent(Intent.ACTION_VIEW,
-									Uri.parse(url));
+							Intent browserIntent = new Intent(
+									Intent.ACTION_VIEW, Uri.parse(url));
 							startActivity(browserIntent);
 						} catch (Exception e) {
 							e.printStackTrace();
@@ -339,12 +338,10 @@ public class MessageDialog extends Activity implements OnTouchListener,
 		// ͼƬ
 		final ImageView msgAttachment = (ImageView) notifyView
 				.findViewById(R.id.msgAttachment);
-		Bitmap bitmap;
-		if (msgBundle.getBoolean("showPic")) {
+		Bitmap bitmap = null;
+		if (msgBundle.getBoolean("showAttachment")) {
 			bitmap = MyApplicationClass.savedImages.get(msgBundle
-					.getString("picUrl"));
-		} else {
-			bitmap = BitmapFactory.decodeResource(MessageDialog.this.getResources(), R.drawable.avatar);
+					.getString("attachmentUrl"));
 		}
 		msgAttachment.setImageBitmap(bitmap);
 	}

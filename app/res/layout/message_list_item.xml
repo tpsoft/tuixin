@@ -8,13 +8,13 @@
     android:padding="4dp" >
 
     <ImageView
-        android:id="@+id/msgAttachment"
+        android:id="@+id/msgSender"
         android:layout_width="48dip"
         android:layout_height="wrap_content"
         android:layout_marginRight="4dip"
         android:layout_marginTop="4dip"
         android:adjustViewBounds="true"
-        android:contentDescription="@string/msg_attachment"
+        android:contentDescription="@string/msg_sender"
         android:cropToPadding="true"
         android:scaleType="fitStart"
         android:src="@drawable/avatar" />
@@ -62,6 +62,15 @@
             android:textColor="#382d24"
             android:textIsSelectable="true"
             android:textSize="14sp" />
+
+        <ImageView
+            android:id="@+id/msgAttachment"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:adjustViewBounds="true"
+            android:contentDescription="@string/msg_attachment"
+            android:cropToPadding="true"
+            android:scaleType="fitStart" />
     </LinearLayout>
 
 </LinearLayout>

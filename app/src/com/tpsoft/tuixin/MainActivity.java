@@ -58,6 +58,8 @@ public class MainActivity extends Activity {
 	public static final String TAG_APILOG = "PushNotification-API";
 	public static final String TAG_MAINLOG = "MAIN";
 
+	public static final String SENDER_ICON_TITLE = "sender-avatar";
+
 	private static final int MESSAGE_REPLY = Menu.FIRST;
 
 	private class MyBroadcastReceiver extends BroadcastReceiver {
@@ -245,7 +247,7 @@ public class MainActivity extends Activity {
 						showMsg(new MyMessage(intent.getBundleExtra("message")),
 								BitmapFactory.decodeResource(
 										MainActivity.this.getResources(),
-										R.drawable.send));
+										R.drawable.send), null);
 					} catch (ParseException e) {
 						e.printStackTrace();
 					}
@@ -280,7 +282,7 @@ public class MainActivity extends Activity {
 		actionBar.setHomeAction(new IntentAction(MainActivity.this,
 				createIntent(this), R.drawable.home_logo));
 		// actionBar.setHomeLogo(R.drawable.ic_launcher);
-		actionBar.setTitle(R.string.app_name);
+		actionBar.setTitle(R.string.latest_msgs);
 		Action sendMessageAction = new IntentAction(this, new Intent(this,
 				SendMessageActivity.class), R.drawable.send_message);
 		actionBar.addAction(sendMessageAction);
@@ -333,23 +335,31 @@ public class MainActivity extends Activity {
 
 		for (MyMessage message : MyApplicationClass.savedMsgs) {
 			// 获取图片URL
-			String imageUrl = null;
+			String senderIconUrl = null;
+			String msgAttachmentUrl = null;
 			if (message.getAttachments() != null) {
 				for (MyMessage.Attachment attachment : message.getAttachments()) {
 					if (attachment.getType().matches("image/.*")) {
-						imageUrl = attachment.getUrl();
-						break;
+						if (attachment.getTitle().equals(SENDER_ICON_TITLE))
+							senderIconUrl = attachment.getUrl();
+						else
+							msgAttachmentUrl = attachment.getUrl();
 					}
 				}
 			}
-			Bitmap image = (imageUrl != null ? MyApplicationClass.savedImages
-					.get(imageUrl) : null);
-			if (image == null)
-				image = BitmapFactory.decodeResource(MainActivity.this
+			Bitmap senderIcon = (senderIconUrl != null ? MyApplicationClass.savedImages
+					.get(senderIconUrl) : null);
+			if (senderIcon == null) {
+				senderIcon = BitmapFactory.decodeResource(MainActivity.this
 						.getResources(),
 						(message.getSender().equals("我") ? R.drawable.send
 								: R.drawable.avatar));
-			msg.addView(makeMessageView(now, message, image, res), 0);
+			}
+			Bitmap msgAttachment = (msgAttachmentUrl != null ? MyApplicationClass.savedImages
+					.get(msgAttachmentUrl) : null);
+			msg.addView(
+					makeMessageView(now, message, senderIcon, msgAttachment,
+							res), 0);
 		}
 		super.onConfigurationChanged(newConfig);
 	}
@@ -436,15 +446,15 @@ public class MainActivity extends Activity {
 	public boolean onContextItemSelected(MenuItem item) {
 		switch (item.getItemId()) {
 		case MESSAGE_REPLY:
-			/*TextView msgTitleView = (TextView) item.getActionView()
-					.findViewById(R.id.msgTitle);
-			// item.getActionView().setBackgroundColor(Color.RED);
-			String title = msgTitleView.getText().toString();
-			title = title.substring(0, title.length() - 1);
-			//
-			Intent i = new Intent(MainActivity.this, SendMessageActivity.class);
-			i.putExtra("receiver", title);
-			startActivity(i);*/
+			/*
+			 * TextView msgTitleView = (TextView) item.getActionView()
+			 * .findViewById(R.id.msgTitle); //
+			 * item.getActionView().setBackgroundColor(Color.RED); String title
+			 * = msgTitleView.getText().toString(); title = title.substring(0,
+			 * title.length() - 1); // Intent i = new Intent(MainActivity.this,
+			 * SendMessageActivity.class); i.putExtra("receiver", title);
+			 * startActivity(i);
+			 */
 			break;
 		}
 		return true;
@@ -516,14 +526,15 @@ public class MainActivity extends Activity {
 		}
 
 		// 获取图片URL及文件名
-		// String attachmentFilename = null;
-		String attachmentUrl = null;
+		String senderIconUrl = null;
+		String msgAttachmentUrl = null;
 		if (message.getAttachments() != null) {
 			for (MyMessage.Attachment attachment : message.getAttachments()) {
 				if (attachment.getType().matches("image/.*")) {
-					// attachmentFilename = attachment.getFilename();
-					attachmentUrl = attachment.getUrl();
-					break;
+					if (attachment.getTitle().equals("sender-avatar"))
+						senderIconUrl = attachment.getUrl();
+					else
+						msgAttachmentUrl = attachment.getUrl();
 				}
 			}
 		}
@@ -541,8 +552,9 @@ public class MainActivity extends Activity {
 		//
 		final Intent messageDialogIntent = (messagePopupClosed ? new Intent(
 				MainActivity.this, MessageDialog.class) : new Intent());
-		if (attachmentUrl != null) {
-			final String imageUrl = attachmentUrl;
+		if (senderIconUrl != null || msgAttachmentUrl != null) {
+			final String iconUrl = senderIconUrl;
+			final String attachmentUrl = msgAttachmentUrl;
 			//
 			final Handler handler = new Handler() {
 				@SuppressLint("HandlerLeak")
@@ -550,16 +562,24 @@ public class MainActivity extends Activity {
 				public void handleMessage(Message msg) {
 					switch (msg.what) {
 					case 0:
-						Bitmap image = MyApplicationClass.savedImages
-								.get(imageUrl);
-						if (image != null) {
-							msgParams.putBoolean("showPic", true);
-							msgParams.putString("picUrl", imageUrl);
+						Bitmap senderIcon = MyApplicationClass.savedImages
+								.get(iconUrl);
+						if (senderIcon != null) {
+							msgParams.putBoolean("showIcon", true);
+							msgParams.putString("iconUrl", iconUrl);
 						} else {
-							msgParams.putBoolean("showPic", false);
+							msgParams.putBoolean("showIcon", false);
+						}
+						Bitmap msgAttachment = MyApplicationClass.savedImages
+								.get(attachmentUrl);
+						if (msgAttachment != null) {
+							msgParams.putBoolean("showAttachment", true);
+							msgParams.putString("attachmentUrl", attachmentUrl);
+						} else {
+							msgParams.putBoolean("showAttachment", false);
 						}
 						// 添加到消息列表
-						showMsg(message, image);
+						showMsg(message, senderIcon, msgAttachment);
 						if (MyApplicationClass.userSettings.isPopupMsg()) {
 							// 显示/更新消息对话框
 							messageDialogIntent.putExtras(msgParams);
@@ -592,20 +612,39 @@ public class MainActivity extends Activity {
 
 			new Thread() {
 				public void run() {
-					if (!MyApplicationClass.savedImages.containsKey(imageUrl)) {
+					if (!MyApplicationClass.savedImages.containsKey(iconUrl)) {
 						InputStream imageStream = httpDownloader
-								.getInputStreamFromURL(imageUrl);
+								.getInputStreamFromURL(iconUrl);
 						Bitmap image = null;
 						if (imageStream != null) {
 							image = BitmapFactory.decodeStream(imageStream);
-							MyApplicationClass.savedImages.put(imageUrl, image);
+							MyApplicationClass.savedImages.put(iconUrl, image);
 							try {
 								imageStream.close();
 							} catch (IOException e) {
 								e.printStackTrace();
 							}
 						} else {
-							MyApplicationClass.savedImages.put(imageUrl, null);
+							MyApplicationClass.savedImages.put(iconUrl, null);
+						}
+					}
+					if (!MyApplicationClass.savedImages
+							.containsKey(attachmentUrl)) {
+						InputStream imageStream = httpDownloader
+								.getInputStreamFromURL(attachmentUrl);
+						Bitmap image = null;
+						if (imageStream != null) {
+							image = BitmapFactory.decodeStream(imageStream);
+							MyApplicationClass.savedImages.put(attachmentUrl,
+									image);
+							try {
+								imageStream.close();
+							} catch (IOException e) {
+								e.printStackTrace();
+							}
+						} else {
+							MyApplicationClass.savedImages.put(attachmentUrl,
+									null);
 						}
 					}
 					Message msg = new Message();
@@ -615,10 +654,11 @@ public class MainActivity extends Activity {
 			}.start();
 		} else {
 			// 添加到消息列表
-			showMsg(message, null);
+			showMsg(message, null, null);
 			if (MyApplicationClass.userSettings.isPopupMsg()) {
 				// 显示/更新消息对话框
-				msgParams.putBoolean("showPic", false);
+				msgParams.putBoolean("showIcon", false);
+				msgParams.putBoolean("showAttachment", false);
 				messageDialogIntent.putExtras(msgParams);
 				if (messagePopupClosed) {
 					// 声音提醒
@@ -640,7 +680,8 @@ public class MainActivity extends Activity {
 		}
 	}
 
-	private void showMsg(MyMessage message, Bitmap image) {
+	private void showMsg(MyMessage message, Bitmap senderIcon,
+			Bitmap msgAttachment) {
 		Date now = new Date();
 		Resources res = getResources();
 
@@ -648,9 +689,9 @@ public class MainActivity extends Activity {
 		View view = makeMessageView(
 				now,
 				message,
-				image == null ? BitmapFactory.decodeResource(
+				senderIcon == null ? BitmapFactory.decodeResource(
 						MainActivity.this.getResources(), R.drawable.avatar)
-						: image, res);
+						: senderIcon, msgAttachment, res);
 		msg.addView(view, 0);
 		if (msg.getChildCount() > MAX_MSG_COUNT) {
 			msg.removeViewAt(MAX_MSG_COUNT);
@@ -674,14 +715,14 @@ public class MainActivity extends Activity {
 	}
 
 	@SuppressLint("ResourceAsColor")
-	private View makeMessageView(Date now, MyMessage message, Bitmap image,
-			Resources res) {
+	private View makeMessageView(Date now, MyMessage message,
+			Bitmap senderIcon, Bitmap msgAttachment, Resources res) {
 		LayoutInflater inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
 		final View listItemView = inflater.inflate(R.layout.message_list_item,
 				(ViewGroup) findViewById(R.id.message));
-		ImageView msgAttachmentView = (ImageView) listItemView
-				.findViewById(R.id.msgAttachment);
-		msgAttachmentView.setImageBitmap(image);
+		ImageView msgSenderView = (ImageView) listItemView
+				.findViewById(R.id.msgSender);
+		msgSenderView.setImageBitmap(senderIcon);
 		//
 		TextView msgTitleView = (TextView) listItemView
 				.findViewById(R.id.msgTitle);
@@ -714,6 +755,10 @@ public class MainActivity extends Activity {
 				.findViewById(R.id.msgBody);
 		msgBodyView.setText(message.getBody());
 		//
+		ImageView msgAttachmentView = (ImageView) listItemView
+				.findViewById(R.id.msgAttachment);
+		msgAttachmentView.setImageBitmap(msgAttachment);
+		//
 		TextView msgTimeView = (TextView) listItemView
 				.findViewById(R.id.msgTime);
 		msgTimeView.setText(makeTimeString(now, message.getGenerateTime()));
@@ -734,7 +779,18 @@ public class MainActivity extends Activity {
 		} else if (diffInSeconds < 60 * 60 * 24) {
 			str = (diffInSeconds / (60 * 60)) + "小时前";
 		} else if (diffInSeconds < 60 * 60 * 24 * 30) {
-			str = (diffInSeconds / (60 * 60 * 24)) + "天前";
+			long days = diffInSeconds / (60 * 60 * 24);
+			switch ((int) days) {
+			case 1:
+				str = "昨天";
+				break;
+			case 2:
+				str = "前天";
+				break;
+			default:
+				str = (days) + "天前";
+				break;
+			}
 		} else {
 			str = sdf.format(time);
 		}

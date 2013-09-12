@@ -2,7 +2,9 @@
 <resources>
     <string name="app_name">推信</string>
     <string name="app_exit">长按返回键可退出程序……</string>
-
+    
+    <string name="latest_msgs">最新消息</string>
+    
     <string name="receiver_starting">启动消息接收器……</string>
     <string name="receiver_stopping">停止消息接收器……</string>
     <string name="receiver_started">消息接收器已启动</string>
@@ -34,6 +36,7 @@
     
     <string name="msg_received">接收到一条新消息</string>
     <string name="msg_index"></string>
+    <string name="msg_sender">消息发送者</string>
     <string name="msg_title">消息标题</string>
     <string name="msg_notitle">无标题</string>
     <string name="msg_body">消息正文</string>
