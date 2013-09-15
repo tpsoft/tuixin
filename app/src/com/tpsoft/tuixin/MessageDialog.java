@@ -13,6 +13,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
@@ -73,6 +74,10 @@ public class MessageDialog extends Activity implements OnTouchListener,
 								.findViewById(R.id.msgIndex);
 						msgIndex.setOnTouchListener(MessageDialog.this);
 						//
+						ImageView msgSender = (ImageView) notifyView
+								.findViewById(R.id.msgSender);
+						msgSender.setOnTouchListener(MessageDialog.this);
+						//
 						TextView msgTitle = (TextView) notifyView
 								.findViewById(R.id.msgTitle);
 						msgTitle.setOnTouchListener(MessageDialog.this);
@@ -127,11 +132,6 @@ public class MessageDialog extends Activity implements OnTouchListener,
 
 		// 准备与后台服务通信
 		myBroadcastReceiver = new MyBroadcastReceiver();
-		try {
-			unregisterReceiver(myBroadcastReceiver);
-		} catch (Exception e) {
-			;
-		}
 		//
 		IntentFilter filter = new IntentFilter();
 		filter.addAction(MainActivity.MY_CLASSNAME);
@@ -139,8 +139,16 @@ public class MessageDialog extends Activity implements OnTouchListener,
 	}
 
 	@Override
+	public void onConfigurationChanged(Configuration newConfig) {
+		// TODO 重新显示消息列表
+		super.onConfigurationChanged(newConfig);
+	}
+
+	@Override
 	protected void onDestroy() {
 		// this is very important here ;)
+		unregisterReceiver(myBroadcastReceiver);
+		//
 		super.onDestroy();
 	}
 
@@ -296,17 +304,21 @@ public class MessageDialog extends Activity implements OnTouchListener,
 		if (!updateMessage)
 			return;
 
-		// 窗口背景
-		if (msgBundle.getBoolean("alert"))
-			notifyView.setBackgroundResource(R.drawable.alert_bg);
-		else
-			notifyView.setBackgroundResource(R.drawable.info_bg);
+		// 发送者
+		ImageView msgSender = (ImageView) notifyView
+				.findViewById(R.id.msgSender);
+		Bitmap bitmap = null;
+		if (msgBundle.getBoolean("showIcon")) {
+			bitmap = MyApplicationClass.savedImages.get(msgBundle
+					.getString("iconUrl"));
+		}
+		msgSender.setImageBitmap(bitmap);
 		// 消息标题
 		TextView msgTitle = (TextView) notifyView.findViewById(R.id.msgTitle);
 		if (msgBundle.containsKey("title"))
 			msgTitle.setText(msgBundle.getString("title"));
 		else if (msgBundle.containsKey("sender"))
-			msgTitle.setText(msgBundle.getString("sender") + ": ");
+			msgTitle.setText("自 " + msgBundle.getString("sender") + ": ");
 		else
 			msgTitle.setText(R.string.msg_notitle);
 		if (msgBundle.containsKey("url")) {
@@ -336,9 +348,9 @@ public class MessageDialog extends Activity implements OnTouchListener,
 		TextView msgBody = (TextView) notifyView.findViewById(R.id.msgBody);
 		msgBody.setText(msgBundle.getString("body"));
 		// 图片
-		final ImageView msgAttachment = (ImageView) notifyView
+		ImageView msgAttachment = (ImageView) notifyView
 				.findViewById(R.id.msgAttachment);
-		Bitmap bitmap = null;
+		bitmap = null;
 		if (msgBundle.getBoolean("showAttachment")) {
 			bitmap = MyApplicationClass.savedImages.get(msgBundle
 					.getString("attachmentUrl"));

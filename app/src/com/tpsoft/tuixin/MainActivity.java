@@ -2,10 +2,13 @@ package com.tpsoft.tuixin;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.ref.WeakReference;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -15,27 +18,28 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.res.Configuration;
-import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
-import android.view.ContextMenu;
-import android.view.ContextMenu.ContextMenuInfo;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
-import android.view.animation.AlphaAnimation;
-import android.view.animation.Animation;
+import android.view.ViewGroup.LayoutParams;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
+import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ListView;
+import android.widget.PopupWindow;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -48,6 +52,7 @@ import com.tpsoft.pushnotification.model.MyMessage;
 import com.tpsoft.pushnotification.model.NetworkParams;
 import com.tpsoft.pushnotification.service.NotifyPushService;
 import com.tpsoft.tuixin.utils.HttpDownloader;
+import com.tpsoft.tuixin.utils.ImageUtils;
 
 public class MainActivity extends Activity {
 
@@ -59,9 +64,16 @@ public class MainActivity extends Activity {
 	public static final String TAG_MAINLOG = "MAIN";
 
 	public static final String SENDER_ICON_TITLE = "sender-avatar";
-	private static final int MESSAGE_REPLY = Menu.FIRST;
+	public static final int ICON_CORNER_SIZE = 60;
 
-	private int msgCount = 0;
+	private static final SimpleDateFormat sdf = new SimpleDateFormat(
+			"yyyy年MM月dd日", Locale.CHINESE);
+
+	private static final int MAX_MSG_COUNT = 10;
+
+	private static final int MESSAGE_START_RECEIVER = 1;
+	private static final int MESSAGE_SHOW_NOTIFICATION = 2;
+	private static final int MESSAGE_UPDATE_TIME = 3;
 
 	private class MyBroadcastReceiver extends BroadcastReceiver {
 
@@ -248,7 +260,7 @@ public class MainActivity extends Activity {
 						showMsg(new MyMessage(intent.getBundleExtra("message")),
 								BitmapFactory.decodeResource(
 										MainActivity.this.getResources(),
-										R.drawable.send), null);
+										R.drawable.sent_message), null);
 					} catch (ParseException e) {
 						e.printStackTrace();
 					}
@@ -259,17 +271,95 @@ public class MainActivity extends Activity {
 		}
 	}
 
-	private static final SimpleDateFormat sdf = new SimpleDateFormat(
-			"yyyy年MM月dd日", Locale.CHINESE);
+	private static class MessageHandler extends Handler {
+		private WeakReference<MainActivity> mActivity;
 
-	private static final int MAX_MSG_COUNT = 20;
+		public MessageHandler(MainActivity activity) {
+			mActivity = new WeakReference<MainActivity>(activity);
+		}
+
+		@Override
+		public void handleMessage(Message msg) {
+			switch (msg.what) {
+			case MESSAGE_START_RECEIVER:
+				mActivity.get().startMessageReceiver();
+				break;
+			case MESSAGE_SHOW_NOTIFICATION:
+				Bundle msgParams = msg.getData();
+				Bitmap senderIcon = MyApplicationClass.savedImages
+						.get(msgParams.getString("iconUrl"));
+				if (senderIcon != null) {
+					msgParams.putBoolean("showIcon", true);
+				} else {
+					msgParams.putBoolean("showIcon", false);
+				}
+				Bitmap msgAttachment = MyApplicationClass.savedImages
+						.get(msgParams.getString("attachmentUrl"));
+				if (msgAttachment != null) {
+					msgParams.putBoolean("showAttachment", true);
+				} else {
+					msgParams.putBoolean("showAttachment", false);
+				}
+				// 添加到消息列表
+				mActivity.get().showMsg((MyMessage) msg.obj, senderIcon,
+						msgAttachment);
+				if (MyApplicationClass.userSettings.isPopupMsg()) {
+					// 显示/更新消息对话框
+					Intent messageDialogIntent = (messagePopupClosed ? new Intent(
+							mActivity.get(), MessageDialog.class)
+							: new Intent());
+					messageDialogIntent.putExtras(msgParams);
+					if (messagePopupClosed) {
+						// 声音提醒
+						if (MyApplicationClass.userSettings.isPlaySound()) {
+							MyApplicationClass.playSoundPool
+									.play(MyApplicationClass.ALERT_MSG ? MyApplicationClass.ALERT_SOUND
+											: MyApplicationClass.INFO_SOUND, 0);
+						}
+						// 显示消息对话框
+						mActivity.get().startActivity(messageDialogIntent);
+						messagePopupClosed = false;
+					} else {
+						// 更新消息对话框
+						messageDialogIntent.setAction(MY_CLASSNAME);
+						messageDialogIntent.putExtra("action", "update");
+						mActivity.get().sendBroadcast(messageDialogIntent);
+					}
+				}
+				break;
+			case MESSAGE_UPDATE_TIME:
+				// 更新旧消息的生成时间
+				Date now = new Date();
+				int msgCount = mActivity.get().msgCount;
+				for (int i = 0; i < msgCount; i++) {
+					MyMessage message = MyApplicationClass.savedMsgs
+							.get(msgCount - i - 1);
+					View listItemView = mActivity.get().msg.getChildAt(i * 2);
+					TextView msgTimeView = (TextView) listItemView
+							.findViewById(R.id.msgTime);
+					msgTimeView.setText(mActivity.get().makeTimeString(now,
+							message.getGenerateTime()));
+				}
+				break;
+			default:
+				super.handleMessage(msg);
+			}
+		}
+	};
+
+	private int msgCount = 0;
+
 	private LinearLayout msg;
 
 	private NotificationManager mNM;
 	private MyBroadcastReceiver myBroadcastReceiver = null;
-	private boolean messagePopupClosed = true;
 
 	private HttpDownloader httpDownloader = new HttpDownloader();
+	private MessageHandler msgHandler;
+	private Timer timer = new Timer(true);
+
+	private static boolean messagePopupClosed = true;
+	private PopupWindow popupWindow;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -281,7 +371,7 @@ public class MainActivity extends Activity {
 
 		ActionBar actionBar = (ActionBar) findViewById(R.id.actionbar);
 		actionBar.setHomeAction(new IntentAction(MainActivity.this,
-				createIntent(this), R.drawable.home_logo));
+				createIntent(this), R.drawable.clock));
 		// actionBar.setHomeLogo(R.drawable.ic_launcher);
 		actionBar.setTitle(R.string.latest_msgs);
 		Action sendMessageAction = new IntentAction(this, new Intent(this,
@@ -294,30 +384,37 @@ public class MainActivity extends Activity {
 		// 初始化消息和日志控件
 		msg = (LinearLayout) findViewById(R.id.msg);
 
-		if (myBroadcastReceiver == null) {
-			// 准备与后台服务通信
-			myBroadcastReceiver = new MyBroadcastReceiver();
-			try {
-				unregisterReceiver(myBroadcastReceiver);
-			} catch (Exception e) {
-				;
-			}
-			//
-			IntentFilter filter = new IntentFilter();
-			filter.addAction("com.tpsoft.pushnotification.NotifyPushService");
-			filter.addAction(MESSAGE_DIALOG_CLASSNAME);
-			filter.addAction(MESSAGE_SEND_CLASSNAME);
-			registerReceiver(myBroadcastReceiver, filter);
+		// 创建 Handler 对象
+		msgHandler = new MessageHandler(this);
 
-			// 启动消息接收器
-			Handler handler = new Handler();
-			Runnable runnable = new Runnable() {
-				public void run() {
-					startMessageReceiver();
-				}
-			};
-			handler.postDelayed(runnable, 1000); // 启动Timer
+		// 准备与后台服务通信
+		myBroadcastReceiver = new MyBroadcastReceiver();
+		try {
+			unregisterReceiver(myBroadcastReceiver);
+		} catch (Exception e) {
+			;
 		}
+		//
+		IntentFilter filter = new IntentFilter();
+		filter.addAction("com.tpsoft.pushnotification.NotifyPushService");
+		filter.addAction(MESSAGE_DIALOG_CLASSNAME);
+		filter.addAction(MESSAGE_SEND_CLASSNAME);
+		registerReceiver(myBroadcastReceiver, filter);
+
+		// 启动消息接收器
+		Message msg = new Message();
+		msg.what = MESSAGE_START_RECEIVER;
+		msgHandler.sendMessageDelayed(msg, 1000);
+
+		// 设置定时更新消息列表中的时间
+		timer.schedule(new TimerTask() {
+			@Override
+			public void run() {
+				Message message = new Message();
+				message.what = MESSAGE_UPDATE_TIME;
+				msgHandler.sendMessage(message);
+			}
+		}, 1000 * 60, 1000 * 60);
 	}
 
 	@Override
@@ -332,7 +429,6 @@ public class MainActivity extends Activity {
 		msg.removeAllViews();
 
 		Date now = new Date();
-		Resources res = getResources();
 
 		for (MyMessage message : MyApplicationClass.savedMsgs) {
 			// 获取图片URL
@@ -351,10 +447,11 @@ public class MainActivity extends Activity {
 			Bitmap senderIcon = (senderIconUrl != null ? MyApplicationClass.savedImages
 					.get(senderIconUrl) : null);
 			if (senderIcon == null) {
-				senderIcon = BitmapFactory.decodeResource(MainActivity.this
-						.getResources(),
-						(message.getSender().equals("我") ? R.drawable.send
-								: R.drawable.avatar));
+				senderIcon = BitmapFactory
+						.decodeResource(
+								MainActivity.this.getResources(),
+								(message.getSender().equals("me") ? R.drawable.sent_message
+										: R.drawable.avatar));
 			}
 			Bitmap msgAttachment = (msgAttachmentUrl != null ? MyApplicationClass.savedImages
 					.get(msgAttachmentUrl) : null);
@@ -363,8 +460,7 @@ public class MainActivity extends Activity {
 				msg.addView(makeMessageSepView(), 0);
 			}
 			msg.addView(
-					makeMessageView(now, message, senderIcon, msgAttachment,
-							res), 0);
+					makeMessageView(now, message, senderIcon, msgAttachment), 0);
 			msgCount++;
 		}
 		super.onConfigurationChanged(newConfig);
@@ -379,13 +475,12 @@ public class MainActivity extends Activity {
 	@Override
 	public boolean onPrepareOptionsMenu(Menu menu) {
 		if (MyApplicationClass.clientStarted) {
-			menu.findItem(R.id.menu_start).setEnabled(false);
-			menu.findItem(R.id.menu_stop).setEnabled(true);
+			menu.findItem(R.id.menu_start).setVisible(false);
+			menu.findItem(R.id.menu_stop).setVisible(true);
 		} else {
-			menu.findItem(R.id.menu_start).setEnabled(true);
-			menu.findItem(R.id.menu_stop).setEnabled(false);
+			menu.findItem(R.id.menu_start).setVisible(true);
+			menu.findItem(R.id.menu_stop).setVisible(false);
 		}
-		menu.findItem(R.id.menu_settings).setEnabled(true);
 		return true;
 	}
 
@@ -433,28 +528,6 @@ public class MainActivity extends Activity {
 		}
 		}
 		return super.dispatchKeyEvent(event);
-	}
-
-	@Override
-	public void onCreateContextMenu(ContextMenu menu, View v,
-			ContextMenuInfo menuInfo) {
-		Animation anim = new AlphaAnimation(0.0f, 1.0f);
-		anim.setDuration(500);
-		anim.setStartOffset(0);
-		anim.setRepeatMode(Animation.REVERSE);
-		anim.setRepeatCount(0);
-		v.startAnimation(anim);
-		//
-		menu.add(0, MESSAGE_REPLY, 0, "回复");
-	}
-
-	@Override
-	public boolean onContextItemSelected(MenuItem item) {
-		switch (item.getItemId()) {
-		case MESSAGE_REPLY:
-			break;
-		}
-		return true;
 	}
 
 	private void startMessageReceiver() {
@@ -506,7 +579,6 @@ public class MainActivity extends Activity {
 		sendBroadcast(serviceIntent);
 	}
 
-	@SuppressLint("HandlerLeak")
 	private void showNotification(String msgText) {
 
 		// 解析消息文本
@@ -514,11 +586,6 @@ public class MainActivity extends Activity {
 		try {
 			message = MyMessage.extractMessage(msgText);
 		} catch (Exception e) {
-			return;
-		}
-
-		if (message.getGenerateTime() == null) {
-			Log.w(TAG_MAINLOG, "接收到没有生成时间的消息：" + msgText);
 			return;
 		}
 
@@ -547,65 +614,10 @@ public class MainActivity extends Activity {
 		if (message.getUrl() != null && !message.getUrl().equals(""))
 			msgParams.putString("url", message.getUrl());
 		//
-		final Intent messageDialogIntent = (messagePopupClosed ? new Intent(
-				MainActivity.this, MessageDialog.class) : new Intent());
 		if (senderIconUrl != null || msgAttachmentUrl != null) {
 			final String iconUrl = senderIconUrl;
 			final String attachmentUrl = msgAttachmentUrl;
 			//
-			final Handler handler = new Handler() {
-				@SuppressLint("HandlerLeak")
-				@Override
-				public void handleMessage(Message msg) {
-					switch (msg.what) {
-					case 0:
-						Bitmap senderIcon = MyApplicationClass.savedImages
-								.get(iconUrl);
-						if (senderIcon != null) {
-							msgParams.putBoolean("showIcon", true);
-							msgParams.putString("iconUrl", iconUrl);
-						} else {
-							msgParams.putBoolean("showIcon", false);
-						}
-						Bitmap msgAttachment = MyApplicationClass.savedImages
-								.get(attachmentUrl);
-						if (msgAttachment != null) {
-							msgParams.putBoolean("showAttachment", true);
-							msgParams.putString("attachmentUrl", attachmentUrl);
-						} else {
-							msgParams.putBoolean("showAttachment", false);
-						}
-						// 添加到消息列表
-						showMsg(message, senderIcon, msgAttachment);
-						if (MyApplicationClass.userSettings.isPopupMsg()) {
-							// 显示/更新消息对话框
-							messageDialogIntent.putExtras(msgParams);
-							if (messagePopupClosed) {
-								// 声音提醒
-								if (MyApplicationClass.userSettings
-										.isPlaySound()) {
-									MyApplicationClass.playSoundPool
-											.play(MyApplicationClass.ALERT_MSG ? MyApplicationClass.ALERT_SOUND
-													: MyApplicationClass.INFO_SOUND,
-													0);
-								}
-								// 显示消息对话框
-								startActivity(messageDialogIntent);
-								messagePopupClosed = false;
-							} else {
-								// 更新消息对话框
-								messageDialogIntent.setAction(MY_CLASSNAME);
-								messageDialogIntent
-										.putExtra("action", "update");
-								sendBroadcast(messageDialogIntent);
-							}
-						}
-						break;
-					default:
-						super.handleMessage(msg);
-					}
-				}
-			};
 
 			new Thread() {
 				public void run() {
@@ -614,7 +626,9 @@ public class MainActivity extends Activity {
 								.getInputStreamFromURL(iconUrl);
 						Bitmap image = null;
 						if (imageStream != null) {
-							image = BitmapFactory.decodeStream(imageStream);
+							image = ImageUtils.roundCorners(
+									BitmapFactory.decodeStream(imageStream),
+									ICON_CORNER_SIZE);
 							MyApplicationClass.savedImages.put(iconUrl, image);
 							try {
 								imageStream.close();
@@ -644,9 +658,13 @@ public class MainActivity extends Activity {
 									null);
 						}
 					}
+					msgParams.putString("iconUrl", iconUrl);
+					msgParams.putString("attachmentUrl", attachmentUrl);
 					Message msg = new Message();
-					msg.what = 0;
-					handler.sendMessage(msg);
+					msg.what = MESSAGE_SHOW_NOTIFICATION;
+					msg.obj = message;
+					msg.setData(msgParams);
+					msgHandler.sendMessage(msg);
 				}
 			}.start();
 		} else {
@@ -656,6 +674,9 @@ public class MainActivity extends Activity {
 				// 显示/更新消息对话框
 				msgParams.putBoolean("showIcon", false);
 				msgParams.putBoolean("showAttachment", false);
+				//
+				Intent messageDialogIntent = (messagePopupClosed ? new Intent(
+						MainActivity.this, MessageDialog.class) : new Intent());
 				messageDialogIntent.putExtras(msgParams);
 				if (messagePopupClosed) {
 					// 声音提醒
@@ -679,16 +700,18 @@ public class MainActivity extends Activity {
 
 	private void showMsg(MyMessage message, Bitmap senderIcon,
 			Bitmap msgAttachment) {
-		Date now = new Date();
-		Resources res = getResources();
+		if (popupWindow != null) {
+			popupWindow.dismiss();
+		}
 
+		Date now = new Date();
 		// 生成消息界面
 		View view = makeMessageView(
 				now,
 				message,
 				senderIcon == null ? BitmapFactory.decodeResource(
 						MainActivity.this.getResources(), R.drawable.avatar)
-						: senderIcon, msgAttachment, res);
+						: senderIcon, msgAttachment);
 		if (msgCount != 0) {
 			// 加消息分隔条
 			msg.addView(makeMessageSepView(), 0);
@@ -718,8 +741,8 @@ public class MainActivity extends Activity {
 	}
 
 	@SuppressLint("ResourceAsColor")
-	private View makeMessageView(Date now, MyMessage message,
-			Bitmap senderIcon, Bitmap msgAttachment, Resources res) {
+	private View makeMessageView(Date now, final MyMessage message,
+			Bitmap senderIcon, Bitmap msgAttachment) {
 		LayoutInflater inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
 		final View listItemView = inflater.inflate(R.layout.message_list_item,
 				null);
@@ -731,9 +754,12 @@ public class MainActivity extends Activity {
 				.findViewById(R.id.msgTitle);
 		if (message.getTitle() != null)
 			msgTitleView.setText(message.getTitle());
-		else if (message.getSender() != null)
-			msgTitleView.setText(message.getSender() + ": ");
-		else
+		else if (message.getSender() != null) {
+			if (message.getSender().equals("me"))
+				msgTitleView.setText("致 " + message.getReceiver() + ": ");
+			else
+				msgTitleView.setText("自 " + message.getSender() + ": ");
+		} else
 			msgTitleView.setText(R.string.msg_notitle);
 		if (message.getUrl() != null) {
 			final String url = message.getUrl();
@@ -766,8 +792,21 @@ public class MainActivity extends Activity {
 				.findViewById(R.id.msgTime);
 		msgTimeView.setText(makeTimeString(now, message.getGenerateTime()));
 		//
-		if (message.getSender() != null && !message.getSender().equals("我")) {
-			registerForContextMenu(listItemView);
+		ImageView msgActions = (ImageView) listItemView
+				.findViewById(R.id.msgActions);
+		if (message.getSender() != null && !message.getSender().equals("me")) {
+			msgActions.setOnClickListener(new View.OnClickListener() {
+
+				@Override
+				public void onClick(View view) {
+					listItemView.setBackgroundColor(MainActivity.this
+							.getResources().getColor(
+									R.color.message_list_item_selected));
+					showMsgActionMenu(message, listItemView);
+				}
+			});
+		} else {
+			msgActions.setVisibility(View.INVISIBLE);
 		}
 		return listItemView;
 	}
@@ -776,6 +815,72 @@ public class MainActivity extends Activity {
 		LayoutInflater inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
 		View sepView = inflater.inflate(R.layout.message_list_sep, null);
 		return sepView;
+	}
+
+	@SuppressWarnings("deprecation")
+	private void showMsgActionMenu(final MyMessage message,
+			final View listItemView) {
+		LinearLayout layout = (LinearLayout) LayoutInflater.from(
+				MainActivity.this).inflate(R.layout.dialog, null);
+		final ListView listView = (ListView) layout
+				.findViewById(R.id.lv_dialog);
+		listView.setAdapter(new ArrayAdapter<String>(MainActivity.this,
+				R.layout.text, R.id.tv_text,
+				new String[] { MainActivity.this.getResources()
+						.getText(R.string.msg_reply).toString() /*
+																 * ,
+																 * MainActivity
+																 * .this
+																 * .getResources
+																 * ()
+																 * .getText(R.
+																 * string
+																 * .msg_favorite
+																 * ).toString()
+																 */}));
+
+		popupWindow = new PopupWindow(MainActivity.this);
+		popupWindow.setBackgroundDrawable(new BitmapDrawable());
+		popupWindow.setWidth(LayoutParams.WRAP_CONTENT);
+		popupWindow.setHeight(LayoutParams.WRAP_CONTENT);
+		popupWindow.setOutsideTouchable(true);
+		popupWindow.setFocusable(true);
+		popupWindow.setContentView(layout);
+		popupWindow.setOnDismissListener(new PopupWindow.OnDismissListener() {
+
+			@Override
+			public void onDismiss() {
+				listItemView.setBackgroundColor(MainActivity.this
+						.getResources().getColor(
+								R.color.message_list_item_unselected));
+				popupWindow = null;
+			}
+		});
+		// showAsDropDown会把里面的view作为参照物，所以要那满屏幕parent
+		// popupWindow.showAsDropDown(findViewById(R.id.tv_title), x, 10);
+		popupWindow.showAsDropDown(listItemView.findViewById(R.id.msgBody));
+
+		listView.setOnItemClickListener(new OnItemClickListener() {
+
+			@Override
+			public void onItemClick(AdapterView<?> parent, View view,
+					int position, long id) {
+				popupWindow.dismiss();
+				//
+				switch (position) {
+				case 0:
+					// 回复
+					Intent i = new Intent(MainActivity.this,
+							SendMessageActivity.class);
+					i.putExtra("receiver", message.getSender());
+					startActivity(i);
+					break;
+				case 1:
+					// 收藏
+					break;
+				}
+			}
+		});
 	}
 
 	private String makeTimeString(Date now, Date time) {

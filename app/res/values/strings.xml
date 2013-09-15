@@ -1,23 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+
     <string name="app_name">推信</string>
     <string name="app_exit">长按返回键可退出程序……</string>
-    
     <string name="latest_msgs">最新消息</string>
-    
     <string name="receiver_starting">启动消息接收器……</string>
     <string name="receiver_stopping">停止消息接收器……</string>
     <string name="receiver_started">消息接收器已启动</string>
     <string name="receiver_stopped">消息接收器已停止</string>
-        
-    <string name="settings">设置</string>
-    <string name="menu_start">启动</string>
-    <string name="menu_stop">停止</string>
-    <string name="menu_settings">设置</string>
-    
+    <string name="settings">系统设置</string>
+    <string name="menu_start">启动接收器</string>
+    <string name="menu_stop">停止接收器</string>
+    <string name="menu_settings">系统设置</string>
     <string name="service_started">服务已启动</string>
     <string name="service_stopped">服务已停止</string>
-   
     <string name="settings_server">服务器</string>
     <string name="server_host">服务地址</string>
     <string name="server_port">服务端口</string>
@@ -26,33 +22,38 @@
     <string name="client_password">登录密码</string>
     <string name="popup_msg">弹出消息</string>
     <string name="play_sound">声音提醒</string>
-    
     <string name="server_host_summary">要登录的服务器的域名或IP地址</string>
     <string name="server_port_summary">用4至5位数字表示的服务端口号</string>
     <string name="client_id_summary">用户标识，建议使用手机号码</string>
     <string name="client_password_summary">默认与账号名称相同</string>
     <string name="popup_msg_summary">收到新消息时，弹出窗口显示</string>
     <string name="play_sound_summary">收到新消息时，发出声音提醒</string>
-    
     <string name="msg_received">接收到一条新消息</string>
     <string name="msg_index"></string>
     <string name="msg_sender">消息发送者</string>
     <string name="msg_title">消息标题</string>
     <string name="msg_notitle">无标题</string>
     <string name="msg_body">消息正文</string>
-    <string name="msg_attachment">消息附件</string>   
+    <string name="msg_attachment">消息附件</string>
     <string name="msg_time">消息时间</string>
     <string name="msg_first">已经是第一条消息了</string>
     <string name="msg_last">已经是最后一条消息了</string>
     <string name="close_button">关闭</string>
-        	     
-    <item name="app_notification_id" type="id"/>   
+
+    <item name="app_notification_id" type="id"/>
+
     <string name="ticker_text">正在启动推信……</string>
     <string name="notification_title">推信</string>
     <string name="notification_message">推信正在后台运行</string>
     <string name="msg_receiver">接收者(长按可选择联系人)</string>
+    <string name="msg_receivers">最近联系人</string>
     <string name="msg_content">消息内容</string>
     <string name="msg_send">发送消息</string>
+    <string name="msg_actions">我想</string>
+    <string name="msg_reply">回复</string>
+    <string name="msg_favorite">收藏</string>
+    <string name="no_receivers">没有最近联系人</string>
     <string name="error_noreceiver">接收者不能为空</string>
     <string name="error_nocontent">消息内容不能为空</string>
+
 </resources>

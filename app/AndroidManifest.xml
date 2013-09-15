@@ -7,7 +7,7 @@
     <uses-sdk
         android:minSdkVersion="8"
         android:targetSdkVersion="10" />
- <!-- targetSdkVersion高于10时在平板上无法显示设置菜单 -->
+    <!-- targetSdkVersion高于10时在平板上无法显示设置菜单 -->
 
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.INTERNET" />
@@ -38,6 +38,7 @@
         </activity>
         <activity
             android:name=".MessageDialog"
+            android:configChanges="keyboardHidden|orientation"
             android:theme="@style/Transparent" >
         </activity>
         <activity

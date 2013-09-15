@@ -1,8 +1,12 @@
 package com.tpsoft.tuixin;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
@@ -11,6 +15,7 @@ import android.provider.ContactsContract;
 import android.view.View;
 import android.view.View.OnLongClickListener;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.markupartist.android.widget.ActionBar;
@@ -21,8 +26,10 @@ import com.tpsoft.pushnotification.model.MyMessage;
 public class SendMessageActivity extends Activity {
 
 	private static int nextMsgId = 1;
+	private static List<String> latestReceivers = new ArrayList<String>();
 
 	private EditText receiverView, msgBodyView;
+	private ImageView receiversView;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -37,11 +44,14 @@ public class SendMessageActivity extends Activity {
 		actionBar.addAction(new SendAction());
 
 		receiverView = (EditText) findViewById(R.id.msgReceiver);
-		if (getIntent().hasExtra("receiver")) {
-			receiverView.setText(getIntent().getStringExtra("receiver"));
-		}
+		receiversView = (ImageView) findViewById(R.id.msgReceivers);
 		msgBodyView = (EditText) findViewById(R.id.msgContent);
 
+		if (getIntent().hasExtra("receiver")) {
+			receiverView.setText(getIntent().getStringExtra("receiver"));
+			msgBodyView.requestFocus();
+		}
+		
 		receiverView.setOnLongClickListener(new OnLongClickListener() {
 
 			@Override
@@ -52,6 +62,33 @@ public class SendMessageActivity extends Activity {
 				intent.setType(ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE);
 				startActivityForResult(intent, 1);
 				return false;
+			}
+		});
+		receiversView.setOnClickListener(new View.OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				if (latestReceivers.size() == 0) {
+					Toast.makeText(SendMessageActivity.this,
+							R.string.no_receivers, Toast.LENGTH_SHORT).show();
+					return;
+				}
+
+				new AlertDialog.Builder(SendMessageActivity.this)
+						.setTitle(R.string.msg_receivers)
+						.setSingleChoiceItems(
+								latestReceivers.toArray(new String[0]), -1,
+								new DialogInterface.OnClickListener() {
+
+									@Override
+									public void onClick(DialogInterface dialog,
+											int which) {
+										receiverView.setText(latestReceivers
+												.get(which));
+										dialog.dismiss();
+									}
+
+								}).show();
 			}
 		});
 	}
@@ -110,7 +147,17 @@ public class SendMessageActivity extends Activity {
 				return;
 			}
 
+			for (int i=0; i<latestReceivers.size(); i++) {
+				if (latestReceivers.get(i).equals(receiver)) {
+					latestReceivers.remove(i);
+					break;
+				}
+			}
+			latestReceivers.add(receiver);
+
 			MyMessage msg = new MyMessage();
+			msg.setSender("me");
+			msg.setReceiver(receiver);
 			msg.setBody(content);
 			msg.setGenerateTime(new Date());
 
@@ -126,7 +173,6 @@ public class SendMessageActivity extends Activity {
 			Intent i2 = new Intent();
 			i2.setAction(MainActivity.MESSAGE_SEND_CLASSNAME);
 			i2.putExtra("action", "sent");
-			msg.setSender("ÎÒ");
 			i2.putExtra("message", msg.getBundle());
 			sendBroadcast(i2);
 

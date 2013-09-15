@@ -7,4 +7,10 @@
     <color name="message_color_2">#68482c</color>
     <color name="message_url">#c8c8c8</color>
 
+    <color name="msg_time">#c8c8c8</color>
+    <color name="message_list_sep_line">#c8c8c8</color>
+    
+    <color name="message_list_item_selected">#939ba2</color>
+    <color name="message_list_item_unselected">#fff</color>
+    
 </resources>

@@ -1,0 +1,15 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+
+    <item
+        android:id="@+id/msgReply"
+        android:orderInCategory="100"
+        android:showAsAction="never"
+        android:title="@string/msg_reply"/>
+    
+    <item
+        android:id="@+id/msgFavorite"
+        android:orderInCategory="101"
+        android:showAsAction="never"
+        android:title="@string/msg_favorite"/>
+
+</menu>

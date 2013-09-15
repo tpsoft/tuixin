@@ -4,13 +4,13 @@
     android:id="@+id/message_list_item"
     android:layout_width="fill_parent"
     android:layout_height="wrap_content"
-    android:background="#fff"
+    android:background="@color/message_list_item_unselected"
     android:orientation="horizontal"
     android:padding="4dp" >
 
     <ImageView
         android:id="@+id/msgSender"
-        android:layout_width="48dip"
+        android:layout_width="36dip"
         android:layout_height="wrap_content"
         android:layout_marginRight="4dip"
         android:layout_marginTop="4dip"
@@ -18,7 +18,7 @@
         android:contentDescription="@string/msg_sender"
         android:cropToPadding="true"
         android:scaleType="fitStart"
-        android:src="@drawable/avatar" />
+        android:src="@drawable/message" />
 
     <LinearLayout
         android:layout_width="fill_parent"
@@ -41,17 +41,38 @@
                 android:textIsSelectable="true"
                 android:textSize="16sp" />
 
-            <TextView
-                android:id="@+id/msgTime"
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="56dip"
                 android:layout_height="wrap_content"
                 android:layout_alignParentRight="true"
-                android:fontFamily="宋体"
-                android:maxLines="10"
-                android:text="@string/msg_time"
-                android:textColor="#382d24"
-                android:textIsSelectable="true"
-                android:textSize="12sp" />
+                android:orientation="vertical" >
+
+                <TextView
+                    android:id="@+id/msgTime"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="宋体"
+                    android:gravity="right"
+                    android:maxLines="1"
+                    android:text="@string/msg_time"
+                    android:textColor="@color/msg_time"
+                    android:textIsSelectable="true"
+                    android:textSize="12sp" />
+
+                <ImageView
+                    android:id="@+id/msgActions"
+                    android:layout_width="fill_parent"
+                    android:layout_height="36dip"
+                    android:layout_marginBottom="-8dip"
+                    android:layout_marginRight="-16dip"
+                    android:layout_marginTop="-8dip"
+                    android:adjustViewBounds="true"
+                    android:contentDescription="@string/msg_actions"
+                    android:cropToPadding="true"
+                    android:gravity="right"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/link" />
+            </LinearLayout>
         </RelativeLayout>
 
         <TextView
@@ -63,7 +84,8 @@
             android:textColor="#382d24"
             android:textIsSelectable="true"
             android:textSize="14sp" />
-        <ImageView
+
+        <ImageView
             android:id="@+id/msgAttachment"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"

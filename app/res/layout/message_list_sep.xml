@@ -3,20 +3,9 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/message_list_sep"
     android:layout_width="fill_parent"
-    android:layout_height="16dip"
-    android:background="#fff"
+    android:layout_height="32dip"
+    android:background="@drawable/message_list_sep_background"
     android:orientation="horizontal"
-    android:padding="1dp" >
-
-    <ImageView
-        android:layout_width="48dip"
-        android:layout_height="fill_parent"
-        android:layout_marginRight="4dip"/>
-
-    <LinearLayout
-        android:layout_width="fill_parent"
-        android:layout_height="match_parent"
-        android:background="@drawable/message_list_sep_background"
-        android:orientation="horizontal" />
+    android:padding="4dp" >
 
 </LinearLayout>

@@ -35,16 +35,28 @@
                 android:textIsSelectable="false"
                 android:textSize="16sp" />
 
+            <ImageView
+                android:id="@+id/msgSender"
+                android:layout_width="36dip"
+                android:layout_height="wrap_content"
+                android:layout_marginRight="1dip"
+                android:layout_toRightOf="@id/msgIndex"
+                android:adjustViewBounds="true"
+                android:contentDescription="@string/msg_sender"
+                android:cropToPadding="true"
+                android:scaleType="fitStart"
+                android:src="@drawable/avatar" />
+
             <TextView
                 android:id="@+id/msgTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginLeft="4dp"
+                android:layout_marginLeft="1dp"
                 android:layout_marginRight="36dp"
-                android:layout_toRightOf="@id/msgIndex"
+                android:layout_toRightOf="@id/msgSender"
                 android:fontFamily="黑体"
-                android:minLines="2"
                 android:maxLines="2"
+                android:minLines="2"
                 android:text="@string/msg_title"
                 android:textColor="#382d24"
                 android:textIsSelectable="true"

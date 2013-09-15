@@ -2,22 +2,40 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:orientation="vertical"
-    android:background="#fff" >
+    android:background="#fff"
+    android:orientation="vertical" >
 
     <com.markupartist.android.widget.ActionBar
         android:id="@+id/actionbar"
         style="@style/ActionBar" />
 
-    <EditText
-        android:id="@+id/msgReceiver"
-        android:layout_width="match_parent"
+    <RelativeLayout
+        android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:ems="10"
-        android:hint="@string/msg_receiver" >
+        android:layout_marginBottom="4dip" >
 
-        <requestFocus />
-    </EditText>
+        <EditText
+            android:id="@+id/msgReceiver"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="36dip"
+            android:ems="10"
+            android:hint="@string/msg_receiver" >
+
+            <requestFocus />
+        </EditText>
+
+        <ImageView
+            android:id="@+id/msgReceivers"
+            android:layout_width="36dip"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:adjustViewBounds="true"
+            android:contentDescription="@string/msg_receivers"
+            android:cropToPadding="true"
+            android:scaleType="fitStart"
+            android:src="@drawable/user_down" />
+    </RelativeLayout>
 
     <EditText
         android:id="@+id/msgContent"

@@ -9,7 +9,11 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import android.util.Log;
+
 public class HttpDownloader {
+
+	public static final String TAG_LOG = "HttpDownloader";
 
 	private URL url = null;
 
@@ -34,8 +38,10 @@ public class HttpDownloader {
 				sb.append(line);
 			}
 
-		} catch (Exception e) {
-			e.printStackTrace();
+		} catch (MalformedURLException e) {
+			Log.w(TAG_LOG, "Malformed url: " + url);
+		} catch (IOException e) {
+			Log.w(TAG_LOG, "IO error: " + e.getMessage());
 		} finally {
 			try {
 				buffer.close();
@@ -95,9 +101,9 @@ public class HttpDownloader {
 			urlConn = (HttpURLConnection) url.openConnection();
 			inputStream = urlConn.getInputStream();
 		} catch (MalformedURLException e) {
-			e.printStackTrace();
+			Log.w(TAG_LOG, "Malformed url: " + url);
 		} catch (IOException e) {
-			e.printStackTrace();
+			Log.w(TAG_LOG, "IO error: " + e.getMessage());
 		}
 
 		return inputStream;
