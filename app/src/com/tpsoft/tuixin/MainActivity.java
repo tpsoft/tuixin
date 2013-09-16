@@ -6,6 +6,7 @@ import java.lang.ref.WeakReference;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -51,6 +52,7 @@ import com.tpsoft.pushnotification.model.LoginParams;
 import com.tpsoft.pushnotification.model.MyMessage;
 import com.tpsoft.pushnotification.model.NetworkParams;
 import com.tpsoft.pushnotification.service.NotifyPushService;
+import com.tpsoft.tuixin.db.DBManager;
 import com.tpsoft.tuixin.utils.HttpDownloader;
 import com.tpsoft.tuixin.utils.ImageUtils;
 
@@ -361,6 +363,8 @@ public class MainActivity extends Activity {
 	private static boolean messagePopupClosed = true;
 	private PopupWindow popupWindow;
 
+	private DBManager db;
+
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -415,6 +419,14 @@ public class MainActivity extends Activity {
 				msgHandler.sendMessage(message);
 			}
 		}, 1000 * 60, 1000 * 60);
+
+		// 打开数据库
+		db = new DBManager(this);
+
+		// 装入已有消息
+		List<MyMessage> messages = db.queryMessages(null, MAX_MSG_COUNT);
+		MyApplicationClass.savedMsgs.addAll(messages);
+		showMessages(messages);
 	}
 
 	@Override
@@ -428,41 +440,7 @@ public class MainActivity extends Activity {
 	public void onConfigurationChanged(Configuration newConfig) {
 		msg.removeAllViews();
 
-		Date now = new Date();
-
-		for (MyMessage message : MyApplicationClass.savedMsgs) {
-			// 获取图片URL
-			String senderIconUrl = null;
-			String msgAttachmentUrl = null;
-			if (message.getAttachments() != null) {
-				for (MyMessage.Attachment attachment : message.getAttachments()) {
-					if (attachment.getType().matches("image/.*")) {
-						if (attachment.getTitle().equals(SENDER_ICON_TITLE))
-							senderIconUrl = attachment.getUrl();
-						else
-							msgAttachmentUrl = attachment.getUrl();
-					}
-				}
-			}
-			Bitmap senderIcon = (senderIconUrl != null ? MyApplicationClass.savedImages
-					.get(senderIconUrl) : null);
-			if (senderIcon == null) {
-				senderIcon = BitmapFactory
-						.decodeResource(
-								MainActivity.this.getResources(),
-								(message.getSender().equals("me") ? R.drawable.sent_message
-										: R.drawable.avatar));
-			}
-			Bitmap msgAttachment = (msgAttachmentUrl != null ? MyApplicationClass.savedImages
-					.get(msgAttachmentUrl) : null);
-			if (msgCount != 0) {
-				// 加消息分隔条
-				msg.addView(makeMessageSepView(), 0);
-			}
-			msg.addView(
-					makeMessageView(now, message, senderIcon, msgAttachment), 0);
-			msgCount++;
-		}
+		showMessages(MyApplicationClass.savedMsgs);
 		super.onConfigurationChanged(newConfig);
 	}
 
@@ -528,6 +506,44 @@ public class MainActivity extends Activity {
 		}
 		}
 		return super.dispatchKeyEvent(event);
+	}
+
+	private void showMessages(List<MyMessage> messages) {
+		Date now = new Date();
+
+		for (MyMessage message : messages) {
+			// 获取图片URL
+			String senderIconUrl = null;
+			String msgAttachmentUrl = null;
+			if (message.getAttachments() != null) {
+				for (MyMessage.Attachment attachment : message.getAttachments()) {
+					if (attachment.getType().matches("image/.*")) {
+						if (attachment.getTitle().equals(SENDER_ICON_TITLE))
+							senderIconUrl = attachment.getUrl();
+						else
+							msgAttachmentUrl = attachment.getUrl();
+					}
+				}
+			}
+			Bitmap senderIcon = (senderIconUrl != null ? MyApplicationClass.savedImages
+					.get(senderIconUrl) : null);
+			if (senderIcon == null) {
+				senderIcon = BitmapFactory
+						.decodeResource(
+								MainActivity.this.getResources(),
+								(message.getSender().equals("me") ? R.drawable.sent_message
+										: R.drawable.avatar));
+			}
+			Bitmap msgAttachment = (msgAttachmentUrl != null ? MyApplicationClass.savedImages
+					.get(msgAttachmentUrl) : null);
+			if (msgCount != 0) {
+				// 加消息分隔条
+				msg.addView(makeMessageSepView(), 0);
+			}
+			msg.addView(
+					makeMessageView(now, message, senderIcon, msgAttachment), 0);
+			msgCount++;
+		}
 	}
 
 	private void startMessageReceiver() {
@@ -705,6 +721,7 @@ public class MainActivity extends Activity {
 		}
 
 		Date now = new Date();
+
 		// 生成消息界面
 		View view = makeMessageView(
 				now,
@@ -729,6 +746,8 @@ public class MainActivity extends Activity {
 			MyApplicationClass.savedMsgs.remove(0);
 		}
 		MyApplicationClass.savedMsgs.add(message);
+		//
+		db.addMessage(message);
 
 		// 更新旧消息的生成时间
 		for (int i = 1; i < msgCount; i++) {
@@ -827,17 +846,7 @@ public class MainActivity extends Activity {
 		listView.setAdapter(new ArrayAdapter<String>(MainActivity.this,
 				R.layout.text, R.id.tv_text,
 				new String[] { MainActivity.this.getResources()
-						.getText(R.string.msg_reply).toString() /*
-																 * ,
-																 * MainActivity
-																 * .this
-																 * .getResources
-																 * ()
-																 * .getText(R.
-																 * string
-																 * .msg_favorite
-																 * ).toString()
-																 */}));
+						.getText(R.string.msg_reply).toString() }));
 
 		popupWindow = new PopupWindow(MainActivity.this);
 		popupWindow.setBackgroundDrawable(new BitmapDrawable());
