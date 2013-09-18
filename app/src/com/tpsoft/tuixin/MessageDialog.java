@@ -309,7 +309,7 @@ public class MessageDialog extends Activity implements OnTouchListener,
 				.findViewById(R.id.msgSender);
 		Bitmap bitmap = null;
 		if (msgBundle.getBoolean("showIcon")) {
-			bitmap = MyApplicationClass.savedImages.get(msgBundle
+			bitmap = MyApplicationClass.loadImage(msgBundle
 					.getString("iconUrl"));
 		}
 		msgSender.setImageBitmap(bitmap);
@@ -352,7 +352,7 @@ public class MessageDialog extends Activity implements OnTouchListener,
 				.findViewById(R.id.msgAttachment);
 		bitmap = null;
 		if (msgBundle.getBoolean("showAttachment")) {
-			bitmap = MyApplicationClass.savedImages.get(msgBundle
+			bitmap = MyApplicationClass.loadImage(msgBundle
 					.getString("attachmentUrl"));
 		}
 		msgAttachment.setImageBitmap(bitmap);

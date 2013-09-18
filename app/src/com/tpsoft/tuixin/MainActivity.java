@@ -69,7 +69,7 @@ public class MainActivity extends Activity {
 	public static final int ICON_CORNER_SIZE = 60;
 
 	private static final SimpleDateFormat sdf = new SimpleDateFormat(
-			"yyyy年MM月dd日", Locale.CHINESE);
+			"MM月dd日", Locale.CHINESE);
 
 	private static final int MAX_MSG_COUNT = 10;
 
@@ -288,15 +288,15 @@ public class MainActivity extends Activity {
 				break;
 			case MESSAGE_SHOW_NOTIFICATION:
 				Bundle msgParams = msg.getData();
-				Bitmap senderIcon = MyApplicationClass.savedImages
-						.get(msgParams.getString("iconUrl"));
+				Bitmap senderIcon = MyApplicationClass.loadImage(msgParams
+						.getString("iconUrl"));
 				if (senderIcon != null) {
 					msgParams.putBoolean("showIcon", true);
 				} else {
 					msgParams.putBoolean("showIcon", false);
 				}
-				Bitmap msgAttachment = MyApplicationClass.savedImages
-						.get(msgParams.getString("attachmentUrl"));
+				Bitmap msgAttachment = MyApplicationClass.loadImage(msgParams
+						.getString("attachmentUrl"));
 				if (msgAttachment != null) {
 					msgParams.putBoolean("showAttachment", true);
 				} else {
@@ -422,6 +422,7 @@ public class MainActivity extends Activity {
 
 		// 打开数据库
 		db = new DBManager(this);
+		MyApplicationClass.db = db;
 
 		// 装入已有消息
 		List<MyMessage> messages = db.queryMessages(null, MAX_MSG_COUNT);
@@ -525,8 +526,8 @@ public class MainActivity extends Activity {
 					}
 				}
 			}
-			Bitmap senderIcon = (senderIconUrl != null ? MyApplicationClass.savedImages
-					.get(senderIconUrl) : null);
+			Bitmap senderIcon = (senderIconUrl != null ? MyApplicationClass
+					.loadImage(senderIconUrl) : null);
 			if (senderIcon == null) {
 				senderIcon = BitmapFactory
 						.decodeResource(
@@ -534,8 +535,8 @@ public class MainActivity extends Activity {
 								(message.getSender().equals("me") ? R.drawable.sent_message
 										: R.drawable.avatar));
 			}
-			Bitmap msgAttachment = (msgAttachmentUrl != null ? MyApplicationClass.savedImages
-					.get(msgAttachmentUrl) : null);
+			Bitmap msgAttachment = (msgAttachmentUrl != null ? MyApplicationClass
+					.loadImage(msgAttachmentUrl) : null);
 			if (msgCount != 0) {
 				// 加消息分隔条
 				msg.addView(makeMessageSepView(), 0);
@@ -637,7 +638,7 @@ public class MainActivity extends Activity {
 
 			new Thread() {
 				public void run() {
-					if (!MyApplicationClass.savedImages.containsKey(iconUrl)) {
+					if (!MyApplicationClass.existsImage(iconUrl)) {
 						InputStream imageStream = httpDownloader
 								.getInputStreamFromURL(iconUrl);
 						Bitmap image = null;
@@ -645,33 +646,28 @@ public class MainActivity extends Activity {
 							image = ImageUtils.roundCorners(
 									BitmapFactory.decodeStream(imageStream),
 									ICON_CORNER_SIZE);
-							MyApplicationClass.savedImages.put(iconUrl, image);
+							MyApplicationClass.saveImage(iconUrl, image);
 							try {
 								imageStream.close();
 							} catch (IOException e) {
 								e.printStackTrace();
 							}
 						} else {
-							MyApplicationClass.savedImages.put(iconUrl, null);
+							MyApplicationClass.saveImage(iconUrl, null);
 						}
 					}
-					if (!MyApplicationClass.savedImages
-							.containsKey(attachmentUrl)) {
+					if (!MyApplicationClass.existsImage(attachmentUrl)) {
 						InputStream imageStream = httpDownloader
 								.getInputStreamFromURL(attachmentUrl);
 						Bitmap image = null;
 						if (imageStream != null) {
 							image = BitmapFactory.decodeStream(imageStream);
-							MyApplicationClass.savedImages.put(attachmentUrl,
-									image);
+							MyApplicationClass.saveImage(attachmentUrl, image);
 							try {
 								imageStream.close();
 							} catch (IOException e) {
 								e.printStackTrace();
 							}
-						} else {
-							MyApplicationClass.savedImages.put(attachmentUrl,
-									null);
 						}
 					}
 					msgParams.putString("iconUrl", iconUrl);
@@ -867,7 +863,7 @@ public class MainActivity extends Activity {
 		});
 		// showAsDropDown会把里面的view作为参照物，所以要那满屏幕parent
 		// popupWindow.showAsDropDown(findViewById(R.id.tv_title), x, 10);
-		popupWindow.showAsDropDown(listItemView.findViewById(R.id.msgBody));
+		popupWindow.showAsDropDown(listItemView.findViewById(R.id.msgTitle));
 
 		listView.setOnItemClickListener(new OnItemClickListener() {
 

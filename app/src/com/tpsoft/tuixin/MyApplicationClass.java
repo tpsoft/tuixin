@@ -1,5 +1,6 @@
 package com.tpsoft.tuixin;
 
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -8,9 +9,11 @@ import java.util.Map;
 import android.app.Application;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 
 import com.tpsoft.pushnotification.model.MyMessage;
 import com.tpsoft.pushnotification.service.NotifyPushService;
+import com.tpsoft.tuixin.db.DBManager;
 import com.tpsoft.tuixin.model.UserSettings;
 import com.tpsoft.tuixin.utils.PlaySoundPool;
 
@@ -30,7 +33,43 @@ public class MyApplicationClass extends Application {
 
 	public static boolean clientStarted = false;
 	public static List<MyMessage> savedMsgs = new ArrayList<MyMessage>();
-	public static Map<String, Bitmap> savedImages = new HashMap<String, Bitmap>();
+
+	public static DBManager db;
+
+	public static void saveImage(String url, Bitmap image) {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		image.compress(Bitmap.CompressFormat.PNG, 100, baos);
+		db.saveAttachmentContent(url, baos.toByteArray());
+		//
+		savedImages.put(url, image);
+	}
+
+	public static boolean existsImage(String url) {
+		if (savedImages.containsKey(url))
+			return true;
+		byte[] bytes = db.loadAttachmentContent(url);
+		if (bytes != null) {
+			savedImages.put(url,
+					BitmapFactory.decodeByteArray(bytes, 0, bytes.length));
+			return true;
+		}
+		return false;
+	}
+
+	public static Bitmap loadImage(String url) {
+		if (savedImages.containsKey(url))
+			return savedImages.get(url);
+		byte[] bytes = db.loadAttachmentContent(url);
+		if (bytes != null) {
+			Bitmap image = BitmapFactory
+					.decodeByteArray(bytes, 0, bytes.length);
+			savedImages.put(url, image);
+			return image;
+		}
+		return null;
+	}
+
+	private static Map<String, Bitmap> savedImages = new HashMap<String, Bitmap>();
 
 	@Override
 	public void onCreate() {
