@@ -21,6 +21,7 @@ import android.content.IntentFilter;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
@@ -53,6 +54,7 @@ import com.tpsoft.pushnotification.model.MyMessage;
 import com.tpsoft.pushnotification.model.NetworkParams;
 import com.tpsoft.pushnotification.service.NotifyPushService;
 import com.tpsoft.tuixin.db.DBManager;
+import com.tpsoft.tuixin.model.MyMessageSupportSave;
 import com.tpsoft.tuixin.utils.HttpDownloader;
 import com.tpsoft.tuixin.utils.ImageUtils;
 
@@ -68,10 +70,10 @@ public class MainActivity extends Activity {
 	public static final String SENDER_ICON_TITLE = "sender-avatar";
 	public static final int ICON_CORNER_SIZE = 60;
 
-	private static final SimpleDateFormat sdf = new SimpleDateFormat(
-			"MM月dd日", Locale.CHINESE);
+	private static final SimpleDateFormat sdf = new SimpleDateFormat("MM月dd日",
+			Locale.CHINESE);
 
-	private static final int MAX_MSG_COUNT = 10;
+	private static final int MAX_MSG_COUNT = 100;
 
 	private static final int MESSAGE_START_RECEIVER = 1;
 	private static final int MESSAGE_SHOW_NOTIFICATION = 2;
@@ -259,7 +261,8 @@ public class MainActivity extends Activity {
 				String action = intent.getStringExtra("action");
 				if (action.equals("sent")) {
 					try {
-						showMsg(new MyMessage(intent.getBundleExtra("message")),
+						showMsg(new MyMessageSupportSave(new MyMessage(
+								intent.getBundleExtra("message"))),
 								BitmapFactory.decodeResource(
 										MainActivity.this.getResources(),
 										R.drawable.sent_message), null);
@@ -303,8 +306,9 @@ public class MainActivity extends Activity {
 					msgParams.putBoolean("showAttachment", false);
 				}
 				// 添加到消息列表
-				mActivity.get().showMsg((MyMessage) msg.obj, senderIcon,
-						msgAttachment);
+				mActivity.get().showMsg(
+						new MyMessageSupportSave((MyMessage) msg.obj),
+						senderIcon, msgAttachment);
 				if (MyApplicationClass.userSettings.isPopupMsg()) {
 					// 显示/更新消息对话框
 					Intent messageDialogIntent = (messagePopupClosed ? new Intent(
@@ -365,6 +369,8 @@ public class MainActivity extends Activity {
 
 	private DBManager db;
 
+	private Bitmap favoriteFlag, unfavoriteFlag;
+
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -424,8 +430,15 @@ public class MainActivity extends Activity {
 		db = new DBManager(this);
 		MyApplicationClass.db = db;
 
+		// 初始化收藏标志
+		favoriteFlag = BitmapFactory.decodeResource(
+				MainActivity.this.getResources(), R.drawable.favorite);
+		unfavoriteFlag = BitmapFactory.decodeResource(
+				MainActivity.this.getResources(), R.drawable.favorite);
+
 		// 装入已有消息
-		List<MyMessage> messages = db.queryMessages(null, MAX_MSG_COUNT);
+		List<MyMessageSupportSave> messages = db.queryMessages(null,
+				MAX_MSG_COUNT);
 		MyApplicationClass.savedMsgs.addAll(messages);
 		showMessages(messages);
 	}
@@ -509,10 +522,10 @@ public class MainActivity extends Activity {
 		return super.dispatchKeyEvent(event);
 	}
 
-	private void showMessages(List<MyMessage> messages) {
+	private void showMessages(List<MyMessageSupportSave> messages) {
 		Date now = new Date();
 
-		for (MyMessage message : messages) {
+		for (MyMessageSupportSave message : messages) {
 			// 获取图片URL
 			String senderIconUrl = null;
 			String msgAttachmentUrl = null;
@@ -681,7 +694,7 @@ public class MainActivity extends Activity {
 			}.start();
 		} else {
 			// 添加到消息列表
-			showMsg(message, null, null);
+			showMsg(new MyMessageSupportSave(message), null, null);
 			if (MyApplicationClass.userSettings.isPopupMsg()) {
 				// 显示/更新消息对话框
 				msgParams.putBoolean("showIcon", false);
@@ -710,7 +723,7 @@ public class MainActivity extends Activity {
 		}
 	}
 
-	private void showMsg(MyMessage message, Bitmap senderIcon,
+	private void showMsg(MyMessageSupportSave message, Bitmap senderIcon,
 			Bitmap msgAttachment) {
 		if (popupWindow != null) {
 			popupWindow.dismiss();
@@ -743,7 +756,7 @@ public class MainActivity extends Activity {
 		}
 		MyApplicationClass.savedMsgs.add(message);
 		//
-		db.addMessage(message);
+		// db.addMessage(message);
 
 		// 更新旧消息的生成时间
 		for (int i = 1; i < msgCount; i++) {
@@ -756,8 +769,18 @@ public class MainActivity extends Activity {
 	}
 
 	@SuppressLint("ResourceAsColor")
-	private View makeMessageView(Date now, final MyMessage message,
+	private View makeMessageView(Date now, final MyMessageSupportSave message,
 			Bitmap senderIcon, Bitmap msgAttachment) {
+		// TODO 给发送者图标回执收藏标志
+		Canvas canvas = new Canvas(senderIcon);
+		if (message.getRecordId() != null) {
+			// 已经收藏
+			canvas.drawBitmap(favoriteFlag, 0, 0, null);
+		} else {
+			// 尚未收藏
+			canvas.drawBitmap(unfavoriteFlag, 0, 0, null);
+		}
+
 		LayoutInflater inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
 		final View listItemView = inflater.inflate(R.layout.message_list_item,
 				null);
@@ -879,9 +902,6 @@ public class MainActivity extends Activity {
 							SendMessageActivity.class);
 					i.putExtra("receiver", message.getSender());
 					startActivity(i);
-					break;
-				case 1:
-					// 收藏
 					break;
 				}
 			}

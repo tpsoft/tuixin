@@ -11,9 +11,9 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
-import com.tpsoft.pushnotification.model.MyMessage;
 import com.tpsoft.pushnotification.service.NotifyPushService;
 import com.tpsoft.tuixin.db.DBManager;
+import com.tpsoft.tuixin.model.MyMessageSupportSave;
 import com.tpsoft.tuixin.model.UserSettings;
 import com.tpsoft.tuixin.utils.PlaySoundPool;
 
@@ -32,7 +32,7 @@ public class MyApplicationClass extends Application {
 	public static UserSettings userSettings;
 
 	public static boolean clientStarted = false;
-	public static List<MyMessage> savedMsgs = new ArrayList<MyMessage>();
+	public static List<MyMessageSupportSave> savedMsgs = new ArrayList<MyMessageSupportSave>();
 
 	public static DBManager db;
 

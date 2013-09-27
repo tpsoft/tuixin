@@ -14,6 +14,7 @@ import android.database.sqlite.SQLiteDatabase;
 
 import com.tpsoft.pushnotification.model.MyMessage;
 import com.tpsoft.pushnotification.model.MyMessage.Attachment;
+import com.tpsoft.tuixin.model.MyMessageSupportSave;
 
 public class DBManager {
 
@@ -110,10 +111,10 @@ public class DBManager {
 	 *            null for all
 	 * @param maxRecords
 	 *            -1 for all
-	 * @return List<MyMessage>
+	 * @return List<MyMessageSupportSave>
 	 */
-	public List<MyMessage> queryMessages(Date after, int maxRecords) {
-		ArrayList<MyMessage> messages = new ArrayList<MyMessage>();
+	public List<MyMessageSupportSave> queryMessages(Date after, int maxRecords) {
+		ArrayList<MyMessageSupportSave> messages = new ArrayList<MyMessageSupportSave>();
 		Cursor c = (after != null ? db.rawQuery(
 				"SELECT * FROM message WHERE generateTime>=? ORDER BY generateTime"
 						+ (maxRecords > 0 ? " LIMIT 0," + maxRecords : ""),
@@ -122,8 +123,8 @@ public class DBManager {
 						+ (maxRecords > 0 ? " LIMIT 0," + maxRecords : ""),
 				null));
 		while (c.moveToNext()) {
-			MyMessage message = new MyMessage();
-			message.setId(c.getLong(c.getColumnIndex("_id")));
+			MyMessageSupportSave message = new MyMessageSupportSave();
+			message.setRecordId(c.getLong(c.getColumnIndex("_id"))); // record id, not msgid
 			message.setSender(c.getString(c.getColumnIndex("sender")));
 			message.setReceiver(c.getString(c.getColumnIndex("receiver")));
 			message.setTitle(c.getString(c.getColumnIndex("title")));

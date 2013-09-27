@@ -20,7 +20,7 @@ public class DBHelper extends SQLiteOpenHelper {
 		db.execSQL("CREATE TABLE IF NOT EXISTS message" // 消息表:
 				+ "(_id INTEGER PRIMARY KEY AUTOINCREMENT, " // 记录ID
 				+ "sender TEXT NOT NULL, " // 发送者名字
-				+ "receiver TEXT, " // 发送者名字
+				+ "receiver TEXT, " // 接收者名字
 				+ "title TEXT, " // 消息标题(可选)
 				+ "body TEXT NOT NULL, " // 消息内容
 				+ "type TEXT NOT NULL, " // 消息类型(text,html,xml,...)
