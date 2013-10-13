@@ -3,7 +3,8 @@
 
     <string name="app_name">推信</string>
     <string name="app_exit">长按返回键可退出程序……</string>
-    <string name="latest_msgs">最新消息</string>
+    <string name="msg_list">消息列表</string>
+    <string name="msg_inbox">收件箱</string>
     <string name="receiver_starting">启动消息接收器……</string>
     <string name="receiver_stopping">停止消息接收器……</string>
     <string name="receiver_started">消息接收器已启动</string>
@@ -42,7 +43,7 @@
 
     <item name="app_notification_id" type="id"/>
 
-    <string name="ticker_text">正在启动推信……</string>
+    <string name="ticker_text">正在启动我的消息……</string>
     <string name="notification_title">推信</string>
     <string name="notification_message">推信正在后台运行</string>
     <string name="msg_receiver">接收者(长按可选择联系人)</string>
@@ -51,6 +52,8 @@
     <string name="msg_send">发送消息</string>
     <string name="msg_actions">我想</string>
     <string name="msg_reply">回复</string>
+    <string name="msg_sendagain">再次发送</string>
+    <string name="msg_forward">转发</string>
     <string name="msg_favorite">收藏</string>
     <string name="no_receivers">没有最近联系人</string>
     <string name="error_noreceiver">接收者不能为空</string>

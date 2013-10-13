@@ -15,7 +15,11 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
+import android.graphics.Bitmap.Config;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Bundle;
@@ -108,8 +112,10 @@ public class MessageDialog extends Activity implements OnTouchListener,
 	private int msgNumber = 1;
 
 	private GestureDetector mGestureDetector;
-	private int verticalMinDistance = 20;
+	private int verticalMinDistance = 30;
 	private int minVelocity = 0;
+
+	private Bitmap favoriteFlag;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -124,6 +130,10 @@ public class MessageDialog extends Activity implements OnTouchListener,
 		// 设置窗口背景透明
 		setTheme(R.style.Transparent);
 		setContentView(R.layout.transparent);
+
+		// 初始化收藏标志
+		favoriteFlag = BitmapFactory.decodeResource(
+				MessageDialog.this.getResources(), R.drawable.favorite);
 
 		// 显示消息
 		showMessage();
@@ -294,7 +304,7 @@ public class MessageDialog extends Activity implements OnTouchListener,
 		finish();
 	}
 
-	private void updateNotifyView(Bundle msgBundle, boolean updateMessage) {
+	private void updateNotifyView(final Bundle msgBundle, boolean updateMessage) {
 		// 消息编号
 		TextView msgIndex = (TextView) notifyView.findViewById(R.id.msgIndex);
 		if (msgCount > 1)
@@ -305,14 +315,48 @@ public class MessageDialog extends Activity implements OnTouchListener,
 			return;
 
 		// 发送者
-		ImageView msgSender = (ImageView) notifyView
+		final ImageView msgSender = (ImageView) notifyView
 				.findViewById(R.id.msgSender);
-		Bitmap bitmap = null;
+		final Bitmap senderIcon;
 		if (msgBundle.getBoolean("showIcon")) {
-			bitmap = MyApplicationClass.loadImage(msgBundle
+			senderIcon = MyApplicationClass.loadImage(msgBundle
 					.getString("iconUrl"));
+		} else {
+			senderIcon = null;
 		}
-		msgSender.setImageBitmap(bitmap);
+		msgSender.setImageBitmap(senderIcon);
+		//
+		msgSender.setOnClickListener(new View.OnClickListener() {
+
+			@Override
+			public void onClick(View view) {
+				// 收藏/取消收藏
+				int id = msgBundle.getInt("id");
+				boolean favorite = msgBundle.getBoolean("favorite", false);
+				//
+				if (!favorite) {
+					// 收藏
+					Bitmap bitmap = Bitmap.createBitmap(senderIcon.copy(
+							Config.ARGB_8888, true));
+					Canvas canvas = new Canvas(bitmap);
+					canvas.drawBitmap(favoriteFlag, null, new Rect(0, 0,
+							senderIcon.getWidth(), senderIcon.getHeight()),
+							null);
+					msgSender.setImageBitmap(bitmap);
+				} else {
+					// 取消收藏
+					msgSender.setImageBitmap(senderIcon);
+				}
+				//
+				Intent i = new Intent();
+				i.setAction(MainActivity.MESSAGE_DIALOG_CLASSNAME);
+				i.putExtra("action", favorite ? "unfavorite" : "favorite");
+				i.putExtra("id", id);
+				sendBroadcast(i);
+				//
+				msgBundle.putBoolean("favorite", !favorite);
+			}
+		});
 		// 消息标题
 		TextView msgTitle = (TextView) notifyView.findViewById(R.id.msgTitle);
 		if (msgBundle.containsKey("title"))
@@ -350,11 +394,11 @@ public class MessageDialog extends Activity implements OnTouchListener,
 		// 图片
 		ImageView msgAttachment = (ImageView) notifyView
 				.findViewById(R.id.msgAttachment);
-		bitmap = null;
+		Bitmap msgAttachmentImage = null;
 		if (msgBundle.getBoolean("showAttachment")) {
-			bitmap = MyApplicationClass.loadImage(msgBundle
+			msgAttachmentImage = MyApplicationClass.loadImage(msgBundle
 					.getString("attachmentUrl"));
 		}
-		msgAttachment.setImageBitmap(bitmap);
+		msgAttachment.setImageBitmap(msgAttachmentImage);
 	}
 }

@@ -11,8 +11,7 @@ import android.media.SoundPool;
  * 调用播放音效的类 只需在你要调用的方法里面调用
  * 
  * PlaySoundPool playSoundPool=new PlaySoundPool(context);
- * playSoundPool.loadSfx(R.raw.fanye, 1);
- * playSoundPool.play(1, 0);
+ * playSoundPool.loadSfx(R.raw.fanye, 1); playSoundPool.play(1, 0);
  * 
  */
 public class PlaySoundPool {
@@ -35,7 +34,7 @@ public class PlaySoundPool {
 	@SuppressLint("UseSparseArrays")
 	public void initSounds() {
 		// 初始化soundPool 对象,第一个参数是允许有多少个声音流同时播放,第2个参数是声音类型,第三个参数是声音的品质
-		soundPool = new SoundPool(100, AudioManager.STREAM_MUSIC, 100);
+		soundPool = new SoundPool(100, AudioManager.STREAM_RING, 100);
 
 		// 初始化HASH表
 		soundPoolMap = new HashMap<Integer, Integer>();
@@ -43,7 +42,7 @@ public class PlaySoundPool {
 		// 获得声音设备和设备音量
 		AudioManager mgr = (AudioManager) context
 				.getSystemService(Context.AUDIO_SERVICE);
-		streamVolume = mgr.getStreamVolume(AudioManager.STREAM_MUSIC);
+		streamVolume = mgr.getStreamVolume(AudioManager.STREAM_RING);
 	}
 
 	public void loadSfx(int raw, int id) {

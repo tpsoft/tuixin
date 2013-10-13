@@ -116,10 +116,10 @@ public class DBManager {
 	public List<MyMessageSupportSave> queryMessages(Date after, int maxRecords) {
 		ArrayList<MyMessageSupportSave> messages = new ArrayList<MyMessageSupportSave>();
 		Cursor c = (after != null ? db.rawQuery(
-				"SELECT * FROM message WHERE generateTime>=? ORDER BY generateTime"
+				"SELECT * FROM message WHERE generateTime>=? ORDER BY generateTime DESC"
 						+ (maxRecords > 0 ? " LIMIT 0," + maxRecords : ""),
 				new String[] { dateFormat.format(after) }) : db.rawQuery(
-				"SELECT * FROM message ORDER BY generateTime"
+				"SELECT * FROM message ORDER BY generateTime DESC"
 						+ (maxRecords > 0 ? " LIMIT 0," + maxRecords : ""),
 				null));
 		while (c.moveToNext()) {
@@ -151,9 +151,9 @@ public class DBManager {
 		}
 		c.close();
 		//
-		for (MyMessage message : messages) {
+		for (MyMessageSupportSave message : messages) {
 			c = db.rawQuery("SELECT * FROM attachment WHERE messageId=?",
-					new String[] { Long.toString(message.getId()) });
+					new String[] { Long.toString(message.getRecordId()) });
 			List<Attachment> attachments = new ArrayList<Attachment>();
 			while (c.moveToNext()) {
 				Attachment attachment = new Attachment();

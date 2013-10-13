@@ -26,20 +26,25 @@ public class MyApplicationClass extends Application {
 	public static final boolean ALERT_MSG = false;
 	public static final int INFO_SOUND = 1;
 	public static final int ALERT_SOUND = 2;
+	
+	public static final boolean receiveOnly = false;
 	// //////////////////////////////////////
 
 	public static PlaySoundPool playSoundPool;
 	public static UserSettings userSettings;
 
 	public static boolean clientStarted = false;
-	public static List<MyMessageSupportSave> savedMsgs = new ArrayList<MyMessageSupportSave>();
+	public static boolean clientLogon = false;
+	public static List<MyMessageSupportSave> latestMsgs = new ArrayList<MyMessageSupportSave>(); // 已有消息(按生成时间降序)
 
 	public static DBManager db;
 
 	public static void saveImage(String url, Bitmap image) {
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		image.compress(Bitmap.CompressFormat.PNG, 100, baos);
-		db.saveAttachmentContent(url, baos.toByteArray());
+		if (image != null) {
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			image.compress(Bitmap.CompressFormat.PNG, 100, baos);
+			db.saveAttachmentContent(url, baos.toByteArray());
+		}
 		//
 		savedImages.put(url, image);
 	}

@@ -6,8 +6,10 @@ import java.lang.ref.WeakReference;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -20,9 +22,11 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
+import android.graphics.Bitmap.Config;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.Bundle;
@@ -58,6 +62,7 @@ import com.tpsoft.tuixin.model.MyMessageSupportSave;
 import com.tpsoft.tuixin.utils.HttpDownloader;
 import com.tpsoft.tuixin.utils.ImageUtils;
 
+@SuppressLint("UseSparseArrays")
 public class MainActivity extends Activity {
 
 	public static final String MY_CLASSNAME = "com.tpsoft.tuixin.MainActivity";
@@ -73,7 +78,8 @@ public class MainActivity extends Activity {
 	private static final SimpleDateFormat sdf = new SimpleDateFormat("MM月dd日",
 			Locale.CHINESE);
 
-	private static final int MAX_MSG_COUNT = 100;
+	private static final int LOAD_MSG_COUNT = 20; // 程序启动时自动加载的最近消息条数
+	private static final long LATEST_MSG_DURATION = 4 * 60; // 要保留在列表中的消息的生成时间与当前时间的最大差值(分钟，不包含已收藏的消息)
 
 	private static final int MESSAGE_START_RECEIVER = 1;
 	private static final int MESSAGE_SHOW_NOTIFICATION = 2;
@@ -126,6 +132,7 @@ public class MainActivity extends Activity {
 							Log.i(TAG_APILOG, "登录成功。");
 							Toast.makeText(MainActivity.this, "登录成功",
 									Toast.LENGTH_SHORT).show();
+							MyApplicationClass.clientLogon = true;
 							break;
 						case NotifyPushService.STATUS_CONNECT_KEEPALIVE: // 发送心跳信号
 							Log.d(TAG_APILOG, "发送心跳信号...");
@@ -138,16 +145,19 @@ public class MainActivity extends Activity {
 							Log.w(TAG_APILOG, "网络不可用！");
 							Toast.makeText(MainActivity.this, "网络不可用",
 									Toast.LENGTH_SHORT).show();
+							MyApplicationClass.clientLogon = false;
 							break;
 						case NotifyPushService.ERROR_CONNECT_BROKEN: // 连接已中断
 							Log.w(TAG_APILOG, "连接已中断！");
 							Toast.makeText(MainActivity.this, "连接已中断",
 									Toast.LENGTH_SHORT).show();
+							MyApplicationClass.clientLogon = false;
 							break;
 						case NotifyPushService.ERROR_CONNECT_SERVER_UNAVAILABLE: // 服务器不可用
 							Log.w(TAG_APILOG, "服务器不可用！");
 							Toast.makeText(MainActivity.this, "服务器不可用",
 									Toast.LENGTH_SHORT).show();
+							MyApplicationClass.clientLogon = false;
 							break;
 						case NotifyPushService.ERROR_CONNECT_LOGIN_TIMEOUT: // 登录超时
 							Log.w(TAG_APILOG, "登录超时！");
@@ -158,6 +168,7 @@ public class MainActivity extends Activity {
 							Log.w(TAG_APILOG, "网络IO故障！");
 							Toast.makeText(MainActivity.this, "网络IO故障",
 									Toast.LENGTH_SHORT).show();
+							MyApplicationClass.clientLogon = false;
 							break;
 						case NotifyPushService.ERROR_CONNECT_APP_CERTIFICATE: // 应用认证失败
 							Log.e(TAG_APILOG, "应用认证失败！");
@@ -173,6 +184,7 @@ public class MainActivity extends Activity {
 							Log.e(TAG_APILOG, "服务器错误！");
 							Toast.makeText(MainActivity.this, "服务器错误",
 									Toast.LENGTH_SHORT).show();
+							MyApplicationClass.clientLogon = false;
 							break;
 						default:
 							break;
@@ -229,6 +241,9 @@ public class MainActivity extends Activity {
 					boolean receiverStarted = intent.getBooleanExtra("started",
 							false);
 					MyApplicationClass.clientStarted = receiverStarted;
+					if (!receiverStarted) {
+						MyApplicationClass.clientLogon = false;
+					}
 					//
 					int resId = (receiverStarted ? R.string.receiver_started
 							: R.string.receiver_stopped);
@@ -253,7 +268,36 @@ public class MainActivity extends Activity {
 			} else if (intent.getAction().equals(MESSAGE_DIALOG_CLASSNAME)) {
 				String action = intent.getStringExtra("action");
 				if (action.equals("popupClosed")) {
+					// 弹出窗口已关闭
 					messagePopupClosed = true;
+				} else if (action.equals("favorite")
+						|| action.equals("unfavorite")) {
+					// 收藏/取消收藏
+					boolean favorite = action.equals("favorite");
+					int id = intent.getIntExtra("id", -1);
+					if (id != -1) {
+						MyMessageSupportSave message = messages.get(id);
+						ImageView msgSenderView = msgSenderViews.get(id);
+						//
+						Bitmap senderIcon = msgSenderIcons.get(id);
+						if (favorite) {
+							long recordId = db.addMessage(message);
+							message.setRecordId(recordId);
+							//
+							Bitmap bitmap = Bitmap.createBitmap(senderIcon
+									.copy(Config.ARGB_8888, true));
+							Canvas canvas = new Canvas(bitmap);
+							canvas.drawBitmap(favoriteFlag, null,
+									new Rect(0, 0, senderIcon.getWidth(),
+											senderIcon.getHeight()), null);
+							msgSenderView.setImageBitmap(bitmap);
+						} else {
+							long recordId = message.getRecordId();
+							db.deleteMessage(recordId);
+							message.setRecordId(null);
+							msgSenderView.setImageBitmap(senderIcon);
+						}
+					}
 				} else {
 					;
 				}
@@ -291,24 +335,24 @@ public class MainActivity extends Activity {
 				break;
 			case MESSAGE_SHOW_NOTIFICATION:
 				Bundle msgParams = msg.getData();
-				Bitmap senderIcon = MyApplicationClass.loadImage(msgParams
-						.getString("iconUrl"));
+				Bitmap senderIcon = msgParams.get("iconUrl") != null ? MyApplicationClass
+						.loadImage(msgParams.getString("iconUrl")) : null;
 				if (senderIcon != null) {
 					msgParams.putBoolean("showIcon", true);
 				} else {
 					msgParams.putBoolean("showIcon", false);
 				}
-				Bitmap msgAttachment = MyApplicationClass.loadImage(msgParams
-						.getString("attachmentUrl"));
+				Bitmap msgAttachment = msgParams.get("attachmentUrl") != null ? MyApplicationClass
+						.loadImage(msgParams.getString("attachmentUrl")) : null;
 				if (msgAttachment != null) {
 					msgParams.putBoolean("showAttachment", true);
 				} else {
 					msgParams.putBoolean("showAttachment", false);
 				}
 				// 添加到消息列表
-				mActivity.get().showMsg(
-						new MyMessageSupportSave((MyMessage) msg.obj),
+				mActivity.get().showMsg((MyMessageSupportSave) msg.obj,
 						senderIcon, msgAttachment);
+				//
 				if (MyApplicationClass.userSettings.isPopupMsg()) {
 					// 显示/更新消息对话框
 					Intent messageDialogIntent = (messagePopupClosed ? new Intent(
@@ -334,17 +378,35 @@ public class MainActivity extends Activity {
 				}
 				break;
 			case MESSAGE_UPDATE_TIME:
-				// 更新旧消息的生成时间
+				// 更新旧消息的生成时间，同时清除已旧的未收藏消息
 				Date now = new Date();
 				int msgCount = mActivity.get().msgCount;
-				for (int i = 0; i < msgCount; i++) {
-					MyMessage message = MyApplicationClass.savedMsgs
-							.get(msgCount - i - 1);
-					View listItemView = mActivity.get().msg.getChildAt(i * 2);
-					TextView msgTimeView = (TextView) listItemView
-							.findViewById(R.id.msgTime);
-					msgTimeView.setText(mActivity.get().makeTimeString(now,
-							message.getGenerateTime()));
+				int i = 0;
+				while (i < msgCount) {
+					MyMessageSupportSave message = MyApplicationClass.latestMsgs
+							.get(i);
+					long diffInMinutes = (now.getTime() - message
+							.getGenerateTime().getTime()) / (1000 * 60);
+					if (diffInMinutes <= LATEST_MSG_DURATION
+							|| message.getRecordId() != null) {
+						// 消息较新或已收藏
+						View listItemView = mActivity.get().msg
+								.getChildAt(i * 2);
+						TextView msgTimeView = (TextView) listItemView
+								.findViewById(R.id.msgTime);
+						msgTimeView.setText(mActivity.get().makeTimeString(now,
+								message.getGenerateTime()));
+						i++;
+					} else {
+						// 消息旧了且未收藏
+						mActivity.get().msg.removeViewAt(i); // 删除消息视图
+						if (i < msgCount - 1) {
+							// 不是最后一条消息
+							mActivity.get().msg.removeViewAt(i); // 删除分隔符视图
+						}
+						MyApplicationClass.latestMsgs.remove(i); // 删除消息
+						msgCount--; // 计数器不变
+					}
 				}
 				break;
 			default:
@@ -354,6 +416,10 @@ public class MainActivity extends Activity {
 	};
 
 	private int msgCount = 0;
+	private int nextMsgId = 0;
+	private Map<Integer/* msgId */, MyMessageSupportSave> messages = new HashMap<Integer, MyMessageSupportSave>();
+	private Map<Integer/* msgId */, Bitmap> msgSenderIcons = new HashMap<Integer, Bitmap>();
+	private Map<Integer/* msgId */, ImageView> msgSenderViews = new HashMap<Integer, ImageView>();
 
 	private LinearLayout msg;
 
@@ -369,7 +435,7 @@ public class MainActivity extends Activity {
 
 	private DBManager db;
 
-	private Bitmap favoriteFlag, unfavoriteFlag;
+	private Bitmap favoriteFlag;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -383,10 +449,12 @@ public class MainActivity extends Activity {
 		actionBar.setHomeAction(new IntentAction(MainActivity.this,
 				createIntent(this), R.drawable.clock));
 		// actionBar.setHomeLogo(R.drawable.ic_launcher);
-		actionBar.setTitle(R.string.latest_msgs);
-		Action sendMessageAction = new IntentAction(this, new Intent(this,
-				SendMessageActivity.class), R.drawable.send_message);
-		actionBar.addAction(sendMessageAction);
+		actionBar.setTitle(R.string.msg_list);
+		if (!MyApplicationClass.receiveOnly) {
+			Action sendMessageAction = new IntentAction(this, new Intent(this,
+					SendMessageActivity.class), R.drawable.send_message);
+			actionBar.addAction(sendMessageAction);
+		}
 
 		// 准备通知
 		mNM = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
@@ -433,13 +501,11 @@ public class MainActivity extends Activity {
 		// 初始化收藏标志
 		favoriteFlag = BitmapFactory.decodeResource(
 				MainActivity.this.getResources(), R.drawable.favorite);
-		unfavoriteFlag = BitmapFactory.decodeResource(
-				MainActivity.this.getResources(), R.drawable.favorite);
 
 		// 装入已有消息
 		List<MyMessageSupportSave> messages = db.queryMessages(null,
-				MAX_MSG_COUNT);
-		MyApplicationClass.savedMsgs.addAll(messages);
+				LOAD_MSG_COUNT);
+		MyApplicationClass.latestMsgs.addAll(messages);
 		showMessages(messages);
 	}
 
@@ -453,8 +519,9 @@ public class MainActivity extends Activity {
 	@Override
 	public void onConfigurationChanged(Configuration newConfig) {
 		msg.removeAllViews();
+		msgCount = 0;
 
-		showMessages(MyApplicationClass.savedMsgs);
+		showMessages(MyApplicationClass.latestMsgs);
 		super.onConfigurationChanged(newConfig);
 	}
 
@@ -552,10 +619,9 @@ public class MainActivity extends Activity {
 					.loadImage(msgAttachmentUrl) : null);
 			if (msgCount != 0) {
 				// 加消息分隔条
-				msg.addView(makeMessageSepView(), 0);
+				msg.addView(makeMessageSepView());
 			}
-			msg.addView(
-					makeMessageView(now, message, senderIcon, msgAttachment), 0);
+			msg.addView(makeMessageView(now, message, senderIcon, msgAttachment));
 			msgCount++;
 		}
 	}
@@ -635,6 +701,7 @@ public class MainActivity extends Activity {
 
 		// 为消息对话框准备数据
 		final Bundle msgParams = new Bundle();
+		msgParams.putInt("id", nextMsgId);
 		msgParams.putBoolean("alert", MyApplicationClass.ALERT_MSG);
 		if (message.getSender() != null)
 			msgParams.putString("sender", message.getSender());
@@ -644,6 +711,10 @@ public class MainActivity extends Activity {
 		if (message.getUrl() != null && !message.getUrl().equals(""))
 			msgParams.putString("url", message.getUrl());
 		//
+		final MyMessageSupportSave messageSupportSave = new MyMessageSupportSave(
+				message);
+		messageSupportSave.setMessageId(nextMsgId++);
+		//
 		if (senderIconUrl != null || msgAttachmentUrl != null) {
 			final String iconUrl = senderIconUrl;
 			final String attachmentUrl = msgAttachmentUrl;
@@ -651,7 +722,8 @@ public class MainActivity extends Activity {
 
 			new Thread() {
 				public void run() {
-					if (!MyApplicationClass.existsImage(iconUrl)) {
+					if (iconUrl != null
+							&& !MyApplicationClass.existsImage(iconUrl)) {
 						InputStream imageStream = httpDownloader
 								.getInputStreamFromURL(iconUrl);
 						Bitmap image = null;
@@ -669,7 +741,8 @@ public class MainActivity extends Activity {
 							MyApplicationClass.saveImage(iconUrl, null);
 						}
 					}
-					if (!MyApplicationClass.existsImage(attachmentUrl)) {
+					if (attachmentUrl != null
+							&& !MyApplicationClass.existsImage(attachmentUrl)) {
 						InputStream imageStream = httpDownloader
 								.getInputStreamFromURL(attachmentUrl);
 						Bitmap image = null;
@@ -681,20 +754,25 @@ public class MainActivity extends Activity {
 							} catch (IOException e) {
 								e.printStackTrace();
 							}
+						} else {
+							MyApplicationClass.saveImage(attachmentUrl, null);
 						}
 					}
-					msgParams.putString("iconUrl", iconUrl);
-					msgParams.putString("attachmentUrl", attachmentUrl);
+					if (iconUrl != null)
+						msgParams.putString("iconUrl", iconUrl);
+					if (attachmentUrl != null)
+						msgParams.putString("attachmentUrl", attachmentUrl);
 					Message msg = new Message();
 					msg.what = MESSAGE_SHOW_NOTIFICATION;
-					msg.obj = message;
+					msg.obj = messageSupportSave;
 					msg.setData(msgParams);
 					msgHandler.sendMessage(msg);
 				}
 			}.start();
 		} else {
 			// 添加到消息列表
-			showMsg(new MyMessageSupportSave(message), null, null);
+			showMsg(messageSupportSave, null, null);
+			//
 			if (MyApplicationClass.userSettings.isPopupMsg()) {
 				// 显示/更新消息对话框
 				msgParams.putBoolean("showIcon", false);
@@ -743,24 +821,14 @@ public class MainActivity extends Activity {
 			msg.addView(makeMessageSepView(), 0);
 		}
 		msg.addView(view, 0);
-		if (msgCount == MAX_MSG_COUNT) {
-			msg.removeViewAt(MAX_MSG_COUNT * 2 - 1);
-			msg.removeViewAt(MAX_MSG_COUNT * 2 - 1);
-		} else {
-			msgCount++;
-		}
+		msgCount++;
 
 		// 保存消息
-		if (MyApplicationClass.savedMsgs.size() == MAX_MSG_COUNT) {
-			MyApplicationClass.savedMsgs.remove(0);
-		}
-		MyApplicationClass.savedMsgs.add(message);
-		//
-		// db.addMessage(message);
+		MyApplicationClass.latestMsgs.add(0, message);
 
 		// 更新旧消息的生成时间
 		for (int i = 1; i < msgCount; i++) {
-			message = MyApplicationClass.savedMsgs.get(msgCount - i - 1);
+			message = MyApplicationClass.latestMsgs.get(i);
 			View listItemView = msg.getChildAt(i * 2);
 			TextView msgTimeView = (TextView) listItemView
 					.findViewById(R.id.msgTime);
@@ -770,23 +838,58 @@ public class MainActivity extends Activity {
 
 	@SuppressLint("ResourceAsColor")
 	private View makeMessageView(Date now, final MyMessageSupportSave message,
-			Bitmap senderIcon, Bitmap msgAttachment) {
-		// TODO 给发送者图标回执收藏标志
-		Canvas canvas = new Canvas(senderIcon);
-		if (message.getRecordId() != null) {
-			// 已经收藏
-			canvas.drawBitmap(favoriteFlag, 0, 0, null);
-		} else {
-			// 尚未收藏
-			canvas.drawBitmap(unfavoriteFlag, 0, 0, null);
-		}
-
+			final Bitmap senderIcon, final Bitmap msgAttachment) {
 		LayoutInflater inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
 		final View listItemView = inflater.inflate(R.layout.message_list_item,
 				null);
-		ImageView msgSenderView = (ImageView) listItemView
+		final ImageView msgSenderView = (ImageView) listItemView
 				.findViewById(R.id.msgSender);
-		msgSenderView.setImageBitmap(senderIcon);
+		//
+		messages.put(message.getMessageId(), message);
+		msgSenderIcons.put(message.getMessageId(), senderIcon);
+		msgSenderViews.put(message.getMessageId(), msgSenderView);
+		//
+		msgSenderView.setOnClickListener(new View.OnClickListener() {
+
+			@Override
+			public void onClick(View view) {
+				if (message.getRecordId() == null) {
+					// 收藏
+					long recordId = db.addMessage(message);
+					message.setRecordId(recordId);
+					//
+					Bitmap bitmap = Bitmap.createBitmap(senderIcon.copy(
+							Config.ARGB_8888, true));
+					Canvas canvas = new Canvas(bitmap);
+					canvas.drawBitmap(favoriteFlag, null, new Rect(0, 0,
+							senderIcon.getWidth(), senderIcon.getHeight()),
+							null);
+					msgSenderView.setImageBitmap(bitmap);
+				} else {
+					// 取消收藏
+					long recordId = message.getRecordId();
+					db.deleteMessage(recordId);
+					message.setRecordId(null);
+					//
+					msgSenderView.setImageBitmap(senderIcon);
+				}
+			}
+		});
+		// 给发送者图标绘制收藏标志
+		Bitmap bitmap = senderIcon;
+		if (message.getRecordId() != null) {
+			// 已经收藏
+			bitmap = Bitmap.createBitmap(senderIcon
+					.copy(Config.ARGB_8888, true));
+			Canvas canvas = new Canvas(bitmap);
+			canvas.drawBitmap(
+					favoriteFlag,
+					null,
+					new Rect(0, 0, senderIcon.getWidth(), senderIcon
+							.getHeight()), null);
+		}
+
+		msgSenderView.setImageBitmap(bitmap);
 		//
 		TextView msgTitleView = (TextView) listItemView
 				.findViewById(R.id.msgTitle);
@@ -832,7 +935,9 @@ public class MainActivity extends Activity {
 		//
 		ImageView msgActions = (ImageView) listItemView
 				.findViewById(R.id.msgActions);
-		if (message.getSender() != null && !message.getSender().equals("me")) {
+		if (MyApplicationClass.receiveOnly) {
+			msgActions.setVisibility(View.INVISIBLE);
+		} else {
 			msgActions.setOnClickListener(new View.OnClickListener() {
 
 				@Override
@@ -843,8 +948,6 @@ public class MainActivity extends Activity {
 					showMsgActionMenu(message, listItemView);
 				}
 			});
-		} else {
-			msgActions.setVisibility(View.INVISIBLE);
 		}
 		return listItemView;
 	}
@@ -862,10 +965,19 @@ public class MainActivity extends Activity {
 				MainActivity.this).inflate(R.layout.dialog, null);
 		final ListView listView = (ListView) layout
 				.findViewById(R.id.lv_dialog);
-		listView.setAdapter(new ArrayAdapter<String>(MainActivity.this,
-				R.layout.text, R.id.tv_text,
-				new String[] { MainActivity.this.getResources()
-						.getText(R.string.msg_reply).toString() }));
+		final boolean sentMessage = (message.getSender().equals("me"));
+		listView.setAdapter(new ArrayAdapter<String>(
+				MainActivity.this,
+				R.layout.text,
+				R.id.tv_text,
+				(sentMessage ? new String[] { MainActivity.this.getResources()
+						.getText(R.string.msg_sendagain).toString() }
+						: new String[] {
+								MainActivity.this.getResources()
+										.getText(R.string.msg_reply).toString(),
+								MainActivity.this.getResources()
+										.getText(R.string.msg_forward)
+										.toString() })));
 
 		popupWindow = new PopupWindow(MainActivity.this);
 		popupWindow.setBackgroundDrawable(new BitmapDrawable());
@@ -895,15 +1007,25 @@ public class MainActivity extends Activity {
 					int position, long id) {
 				popupWindow.dismiss();
 				//
+				Intent i = new Intent(MainActivity.this,
+						SendMessageActivity.class);
 				switch (position) {
 				case 0:
-					// 回复
-					Intent i = new Intent(MainActivity.this,
-							SendMessageActivity.class);
-					i.putExtra("receiver", message.getSender());
-					startActivity(i);
+					// 回复/再次发送
+					if (sentMessage) {
+						// 再次发送
+						i.putExtra("receiver", message.getReceiver());
+						i.putExtra("message", message.getBody());
+					} else {
+						i.putExtra("receiver", message.getSender());
+					}
+					break;
+				case 1:
+					// 转发
+					i.putExtra("message", message.getBody());
 					break;
 				}
+				startActivity(i);
 			}
 		});
 	}

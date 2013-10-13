@@ -30,10 +30,11 @@
         <EditTextPreference
             android:defaultValue=""
             android:key="clientPassword"
+            android:password="true"
             android:persistent="true"
             android:summary="@string/client_password_summary"
             android:title="@string/client_password" />
-        
+
         <CheckBoxPreference
             android:defaultValue="true"
             android:key="popupMsg"
@@ -46,6 +47,6 @@
             android:persistent="true"
             android:summary="@string/play_sound_summary"
             android:title="@string/play_sound" />
-        </PreferenceCategory>
+    </PreferenceCategory>
 
 </PreferenceScreen>

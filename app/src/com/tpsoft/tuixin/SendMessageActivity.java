@@ -6,6 +6,7 @@ import java.util.List;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
@@ -51,7 +52,10 @@ public class SendMessageActivity extends Activity {
 			receiverView.setText(getIntent().getStringExtra("receiver"));
 			msgBodyView.requestFocus();
 		}
-		
+		if (getIntent().hasExtra("message")) {
+			msgBodyView.setText(getIntent().getStringExtra("message"));
+		}
+
 		receiverView.setOnLongClickListener(new OnLongClickListener() {
 
 			@Override
@@ -147,13 +151,41 @@ public class SendMessageActivity extends Activity {
 				return;
 			}
 
-			for (int i=0; i<latestReceivers.size(); i++) {
+			for (int i = 0; i < latestReceivers.size(); i++) {
 				if (latestReceivers.get(i).equals(receiver)) {
 					latestReceivers.remove(i);
 					break;
 				}
 			}
 			latestReceivers.add(receiver);
+
+			if (!MyApplicationClass.clientLogon) {
+				Dialog alertDialog = new AlertDialog.Builder(
+						SendMessageActivity.this)
+						.setTitle("提示")
+						.setMessage("因尚未成功登录，无法发送消息！")
+						.setIcon(R.drawable.ic_launcher)
+						.setPositiveButton("确定",
+								new DialogInterface.OnClickListener() {
+
+									@Override
+									public void onClick(DialogInterface dialog,
+											int which) {
+										dialog.dismiss();
+									}
+								})
+						.setNegativeButton("取消",
+								new DialogInterface.OnClickListener() {
+
+									@Override
+									public void onClick(DialogInterface dialog,
+											int which) {
+										finish();
+									}
+								}).create();
+				alertDialog.show();
+				return;
+			}
 
 			MyMessage msg = new MyMessage();
 			msg.setSender("me");
