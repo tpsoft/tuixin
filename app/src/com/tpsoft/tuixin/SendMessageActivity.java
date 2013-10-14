@@ -26,7 +26,6 @@ import com.tpsoft.pushnotification.model.MyMessage;
 
 public class SendMessageActivity extends Activity {
 
-	private static int nextMsgId = 1;
 	private static List<String> latestReceivers = new ArrayList<String>();
 
 	private EditText receiverView, msgBodyView;
@@ -163,7 +162,7 @@ public class SendMessageActivity extends Activity {
 				Dialog alertDialog = new AlertDialog.Builder(
 						SendMessageActivity.this)
 						.setTitle("提示")
-						.setMessage("因尚未成功登录，无法发送消息！")
+						.setMessage("因尚未登录，无法发送消息！")
 						.setIcon(R.drawable.ic_launcher)
 						.setPositiveButton("确定",
 								new DialogInterface.OnClickListener() {
@@ -193,22 +192,18 @@ public class SendMessageActivity extends Activity {
 			msg.setBody(content);
 			msg.setGenerateTime(new Date());
 
-			Intent i = new Intent();
-			i.setAction("com.tpsoft.pushnotification.ServiceController");
-			i.putExtra("command", "send");
-			i.putExtra("msgId", Integer.toString(nextMsgId++));
-			i.putExtra("receiver", receiver);
-			// i.putExtra("secure", false);
-			i.putExtra("com.tpsoft.pushnotification.MyMessage", msg.getBundle());
-			sendBroadcast(i);
+			int msgId = MyApplicationClass.nextMsgId++;
 
-			Intent i2 = new Intent();
-			i2.setAction(MainActivity.MESSAGE_SEND_CLASSNAME);
-			i2.putExtra("action", "sent");
-			i2.putExtra("message", msg.getBundle());
-			sendBroadcast(i2);
+			Intent i = new Intent();
+			i.setAction(MainActivity.MESSAGE_SEND_CLASSNAME);
+			i.putExtra("action", "send");
+			i.putExtra("msgId", msgId);
+			i.putExtra("message", msg.getBundle());
+			sendBroadcast(i);
 
 			finish();
 		}
 	}
 }
+
+

@@ -5,13 +5,13 @@
     <string name="app_exit">长按返回键可退出程序……</string>
     <string name="msg_list">消息列表</string>
     <string name="msg_inbox">收件箱</string>
-    <string name="receiver_starting">启动消息接收器……</string>
-    <string name="receiver_stopping">停止消息接收器……</string>
-    <string name="receiver_started">消息接收器已启动</string>
-    <string name="receiver_stopped">消息接收器已停止</string>
+    <string name="receiver_starting">启动消息收发器……</string>
+    <string name="receiver_stopping">停止消息收发器……</string>
+    <string name="receiver_started">消息收发器已启动</string>
+    <string name="receiver_stopped">消息收发器已停止</string>
     <string name="settings">系统设置</string>
-    <string name="menu_start">启动接收器</string>
-    <string name="menu_stop">停止接收器</string>
+    <string name="menu_start">启动收发器</string>
+    <string name="menu_stop">停止收发器</string>
     <string name="menu_settings">系统设置</string>
     <string name="service_started">服务已启动</string>
     <string name="service_stopped">服务已停止</string>
@@ -25,7 +25,7 @@
     <string name="play_sound">声音提醒</string>
     <string name="server_host_summary">要登录的服务器的域名或IP地址</string>
     <string name="server_port_summary">用4至5位数字表示的服务端口号</string>
-    <string name="client_id_summary">用户标识，建议使用手机号码</string>
+    <string name="client_id_summary">用户ID，建议使用手机号码</string>
     <string name="client_password_summary">默认与账号名称相同</string>
     <string name="popup_msg_summary">收到新消息时，弹出窗口显示</string>
     <string name="play_sound_summary">收到新消息时，发出声音提醒</string>
@@ -43,7 +43,7 @@
 
     <item name="app_notification_id" type="id"/>
 
-    <string name="ticker_text">正在启动我的消息……</string>
+    <string name="ticker_text">正在启动推信……</string>
     <string name="notification_title">推信</string>
     <string name="notification_message">推信正在后台运行</string>
     <string name="msg_receiver">接收者(长按可选择联系人)</string>

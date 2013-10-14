@@ -26,7 +26,6 @@ public class MyMessageSupportSave extends MyMessage {
 		super(message.getSender(), message.getReceiver(), message.getTitle(), message.getBody(),
 				message.getType(), message.getUrl(), message.getGenerateTime(),
 				message.getExpiration(), message.getAttachments());
-		this.setId(message.getId());
 	}
 	
 	public MyMessageSupportSave() {

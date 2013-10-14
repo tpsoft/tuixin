@@ -93,6 +93,10 @@ public class UserSettings {
 				return "IMSI_" + imsi;
 			}
 		} else {
+			if (phoneNumber.startsWith("+86")) {
+				// 去掉中国大陆代码前缀
+				phoneNumber = phoneNumber.substring(3);
+			}
 			return phoneNumber;
 		}
 	}

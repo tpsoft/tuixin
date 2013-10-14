@@ -52,6 +52,8 @@ import android.widget.Toast;
 import com.markupartist.android.widget.ActionBar;
 import com.markupartist.android.widget.ActionBar.Action;
 import com.markupartist.android.widget.ActionBar.IntentAction;
+import com.tpsoft.pushnotification.client.MessageTransceiverListener;
+import com.tpsoft.pushnotification.client.PushNotificationClient;
 import com.tpsoft.pushnotification.model.AppParams;
 import com.tpsoft.pushnotification.model.LoginParams;
 import com.tpsoft.pushnotification.model.MyMessage;
@@ -63,7 +65,8 @@ import com.tpsoft.tuixin.utils.HttpDownloader;
 import com.tpsoft.tuixin.utils.ImageUtils;
 
 @SuppressLint("UseSparseArrays")
-public class MainActivity extends Activity {
+public class MainActivity extends Activity implements
+		MessageTransceiverListener {
 
 	public static final String MY_CLASSNAME = "com.tpsoft.tuixin.MainActivity";
 	public static final String MESSAGE_DIALOG_CLASSNAME = "com.tpsoft.tuixin.MessageDialog";
@@ -89,183 +92,8 @@ public class MainActivity extends Activity {
 
 		@Override
 		public void onReceive(Context context, Intent intent) {
-			if (intent.getAction().equals(
-					"com.tpsoft.pushnotification.NotifyPushService")) {
-				String action = intent.getStringExtra("action");
-				if (action.equals("notify")) {
-					showNotification(intent.getStringExtra("msgText"));
-				} else if (action.equals("log")) {
-					// 处理日志
-					int type = intent.getIntExtra("type", 0);
-					int code = intent.getIntExtra("code", 0);
-					String params = intent.getStringExtra("params");
-					switch (type) {
-					case NotifyPushService.LOG_CONNECT: // 连接:
-						switch (code) {
-						case NotifyPushService.STATUS_CONNECT_CONNECTING: // 连接服务器...
-							Log.i(TAG_APILOG, "连接服务器 " + params + "...");
-							break;
-						case NotifyPushService.STATUS_CONNECT_CONNECTED: // 已经连接到服务器
-							Log.i(TAG_APILOG, "已连接到服务器。");
-							break;
-						case NotifyPushService.STATUS_CONNECT_APP_CERTIFICATING: // 应用认证...
-							Log.i(TAG_APILOG, "校验应用ID和接入密码...");
-							break;
-						case NotifyPushService.STATUS_CONNECT_APP_CERTIFICATED: // 应用认证通过
-							Log.i(TAG_APILOG, "应用认证通过。");
-							break;
-						case NotifyPushService.STATUS_CONNECT_USER_CERTIFICATING: // 用户认证...
-							Log.i(TAG_APILOG, "校验用户名和密码...");
-							break;
-						case NotifyPushService.STATUS_CONNECT_USER_CERTIFICATED: // 用户认证通过
-							Log.i(TAG_APILOG, "用户认证通过。");
-							break;
-						case NotifyPushService.STATUS_CONNECT_MSGKEY_RECEIVED: // 收到消息密钥
-							Log.i(TAG_APILOG, "收到消息密钥。");
-							break;
-						case NotifyPushService.STATUS_CONNECT_KEEPALIVEINTERVAL_RECEIVED: // 收到心跳周期
-							Log.i(TAG_APILOG,
-									"收到心跳周期: " + Integer.parseInt(params)
-											/ 1000 + "秒。");
-							break;
-						case NotifyPushService.STATUS_CONNECT_LOGON: // 登录成功
-							Log.i(TAG_APILOG, "登录成功。");
-							Toast.makeText(MainActivity.this, "登录成功",
-									Toast.LENGTH_SHORT).show();
-							MyApplicationClass.clientLogon = true;
-							break;
-						case NotifyPushService.STATUS_CONNECT_KEEPALIVE: // 发送心跳信号
-							Log.d(TAG_APILOG, "发送心跳信号...");
-							break;
-						case NotifyPushService.STATUS_CONNECT_KEEPALIVE_REPLIED: // 收到心跳回复信号
-							// showLog("收到心跳回复信号。");
-							Log.d(TAG_APILOG, "收到心跳回复信号");
-							break;
-						case NotifyPushService.ERROR_CONNECT_NETWORK_UNAVAILABLE: // 网络不可用
-							Log.w(TAG_APILOG, "网络不可用！");
-							Toast.makeText(MainActivity.this, "网络不可用",
-									Toast.LENGTH_SHORT).show();
-							MyApplicationClass.clientLogon = false;
-							break;
-						case NotifyPushService.ERROR_CONNECT_BROKEN: // 连接已中断
-							Log.w(TAG_APILOG, "连接已中断！");
-							Toast.makeText(MainActivity.this, "连接已中断",
-									Toast.LENGTH_SHORT).show();
-							MyApplicationClass.clientLogon = false;
-							break;
-						case NotifyPushService.ERROR_CONNECT_SERVER_UNAVAILABLE: // 服务器不可用
-							Log.w(TAG_APILOG, "服务器不可用！");
-							Toast.makeText(MainActivity.this, "服务器不可用",
-									Toast.LENGTH_SHORT).show();
-							MyApplicationClass.clientLogon = false;
-							break;
-						case NotifyPushService.ERROR_CONNECT_LOGIN_TIMEOUT: // 登录超时
-							Log.w(TAG_APILOG, "登录超时！");
-							Toast.makeText(MainActivity.this, "登录超时",
-									Toast.LENGTH_SHORT).show();
-							break;
-						case NotifyPushService.ERROR_CONNECT_IO_FAULT: // 网络IO故障
-							Log.w(TAG_APILOG, "网络IO故障！");
-							Toast.makeText(MainActivity.this, "网络IO故障",
-									Toast.LENGTH_SHORT).show();
-							MyApplicationClass.clientLogon = false;
-							break;
-						case NotifyPushService.ERROR_CONNECT_APP_CERTIFICATE: // 应用认证失败
-							Log.e(TAG_APILOG, "应用认证失败！");
-							Toast.makeText(MainActivity.this, "应用认证失败",
-									Toast.LENGTH_SHORT).show();
-							break;
-						case NotifyPushService.ERROR_CONNECT_USER_CERTIFICATE: // 用户认证失败
-							Log.e(TAG_APILOG, "用户认证失败！");
-							Toast.makeText(MainActivity.this, "用户认证失败",
-									Toast.LENGTH_SHORT).show();
-							break;
-						case NotifyPushService.ERROR_CONNECT_SERVER: // 服务器错误
-							Log.e(TAG_APILOG, "服务器错误！");
-							Toast.makeText(MainActivity.this, "服务器错误",
-									Toast.LENGTH_SHORT).show();
-							MyApplicationClass.clientLogon = false;
-							break;
-						default:
-							break;
-						}
-						break;
-					case NotifyPushService.LOG_SENDMSG: // 发送消息:
-						switch (code) {
-						case NotifyPushService.STATUS_SENDMSG_SUBMIT: // 提交消息
-							Log.i(TAG_APILOG, "提交 #" + params + " 消息...");
-							Toast.makeText(MainActivity.this, "提交消息...",
-									Toast.LENGTH_SHORT).show();
-							break;
-						case NotifyPushService.STATUS_SENDMSG_SUBMITTED: // 已提交消息
-							Log.i(TAG_APILOG, "#" + params + " 消息已提交。");
-							Toast.makeText(MainActivity.this, "消息已提交",
-									Toast.LENGTH_SHORT).show();
-							break;
-						case NotifyPushService.STATUS_SENDMSG_OK: // 收到消息确认
-							Log.i(TAG_APILOG, "#" + params + " 消息已确认。");
-							Toast.makeText(MainActivity.this, "消息已确认",
-									Toast.LENGTH_SHORT).show();
-							break;
-						case NotifyPushService.ERROR_SENDMSG_NOT_LOGON: // 尚未登录成功
-							Toast.makeText(MainActivity.this, "尚未成功登录",
-									Toast.LENGTH_SHORT).show();
-							break;
-						case NotifyPushService.ERROR_SENDMSG_DATA: // 消息数据错误
-							Log.e(TAG_APILOG, "#" + params + " 消息数据错误！");
-							break;
-						case NotifyPushService.ERROR_SENDMSG_SUBMIT: // 提交消息失败
-							Log.w(TAG_APILOG, "#" + params + " 消息提交失败。");
-							Toast.makeText(MainActivity.this, "消息提交失败",
-									Toast.LENGTH_SHORT).show();
-							break;
-						case NotifyPushService.ERROR_SENDMSG_FAILED: // 发送消息失败
-							int pos = params.indexOf(":");
-							String msgId = params.substring(0, pos);
-							String err = params.substring(pos + 1);
-							String errmsg = err.substring(err.indexOf(",") + 1);
-							Log.w(TAG_APILOG, "#" + msgId + " 消息发送失败(" + errmsg
-									+ ")！");
-							Toast.makeText(MainActivity.this, "消息发送失败",
-									Toast.LENGTH_SHORT).show();
-							break;
-						default:
-							break;
-						}
-						break;
-					default:
-						break;
-					}
-				} else if (action.equals("status")) {
-					// 响应消息接收器状态变化
-					boolean receiverStarted = intent.getBooleanExtra("started",
-							false);
-					MyApplicationClass.clientStarted = receiverStarted;
-					if (!receiverStarted) {
-						MyApplicationClass.clientLogon = false;
-					}
-					//
-					int resId = (receiverStarted ? R.string.receiver_started
-							: R.string.receiver_stopped);
-					String log = MainActivity.this.getText(resId).toString();
-					Log.i(TAG_APILOG, log);
-					Toast.makeText(MainActivity.this, log, Toast.LENGTH_SHORT)
-							.show();
-				} else if (action.equals("logining")) {
-					// 响应登录状态变化
-					boolean logining = intent
-							.getBooleanExtra("logining", false);
-					if (logining) {
-						Toast.makeText(MainActivity.this, "正在登录...",
-								Toast.LENGTH_SHORT).show();
-					}
-					ActionBar actionBar = (ActionBar) findViewById(R.id.actionbar);
-					actionBar.setProgressBarVisibility(logining ? View.VISIBLE
-							: View.GONE);
-				} else {
-					;
-				}
-			} else if (intent.getAction().equals(MESSAGE_DIALOG_CLASSNAME)) {
+			if (intent.getAction().equals(MESSAGE_DIALOG_CLASSNAME)) {
+				// 消息弹出通知
 				String action = intent.getStringExtra("action");
 				if (action.equals("popupClosed")) {
 					// 弹出窗口已关闭
@@ -298,23 +126,27 @@ public class MainActivity extends Activity {
 							msgSenderView.setImageBitmap(senderIcon);
 						}
 					}
-				} else {
-					;
 				}
 			} else if (intent.getAction().equals(MESSAGE_SEND_CLASSNAME)) {
+				// 消息发送通知
 				String action = intent.getStringExtra("action");
-				if (action.equals("sent")) {
+				if (action.equals("send")) {
+					int msgId = intent.getIntExtra("msgId", 0);
+					MyMessage msg;
 					try {
-						showMsg(new MyMessageSupportSave(new MyMessage(
-								intent.getBundleExtra("message"))),
-								BitmapFactory.decodeResource(
-										MainActivity.this.getResources(),
-										R.drawable.sent_message), null);
+						msg = new MyMessage(intent.getBundleExtra("message"));
 					} catch (ParseException e) {
-						e.printStackTrace();
+						Log.e(TAG_MAINLOG, e.getMessage());
+						return;
 					}
-				} else {
-					;
+					//
+					mClient.sendMessage(msgId, msg);
+					//
+					MyMessageSupportSave msg2 = new MyMessageSupportSave(msg);
+					msg2.setMessageId(msgId);
+					showMsg(msg2, BitmapFactory.decodeResource(
+							MainActivity.this.getResources(),
+							R.drawable.sent_message), null);
 				}
 			}
 		}
@@ -415,8 +247,9 @@ public class MainActivity extends Activity {
 		}
 	};
 
+	private PushNotificationClient mClient;
+
 	private int msgCount = 0;
-	private int nextMsgId = 0;
 	private Map<Integer/* msgId */, MyMessageSupportSave> messages = new HashMap<Integer, MyMessageSupportSave>();
 	private Map<Integer/* msgId */, Bitmap> msgSenderIcons = new HashMap<Integer, Bitmap>();
 	private Map<Integer/* msgId */, ImageView> msgSenderViews = new HashMap<Integer, ImageView>();
@@ -456,6 +289,9 @@ public class MainActivity extends Activity {
 			actionBar.addAction(sendMessageAction);
 		}
 
+		// 实例化客户端
+		mClient = new PushNotificationClient(this, this);
+
 		// 准备通知
 		mNM = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 
@@ -474,12 +310,11 @@ public class MainActivity extends Activity {
 		}
 		//
 		IntentFilter filter = new IntentFilter();
-		filter.addAction("com.tpsoft.pushnotification.NotifyPushService");
 		filter.addAction(MESSAGE_DIALOG_CLASSNAME);
 		filter.addAction(MESSAGE_SEND_CLASSNAME);
 		registerReceiver(myBroadcastReceiver, filter);
 
-		// 启动消息接收器
+		// 启动消息收发器
 		Message msg = new Message();
 		msg.what = MESSAGE_START_RECEIVER;
 		msgHandler.sendMessageDelayed(msg, 1000);
@@ -547,11 +382,11 @@ public class MainActivity extends Activity {
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch (item.getItemId()) {
 		case R.id.menu_start:
-			// 启动消息接收器
+			// 启动消息收发器
 			startMessageReceiver();
 			break;
 		case R.id.menu_stop:
-			// 停止消息接收器
+			// 停止消息收发器
 			stopMessageReceiver();
 			break;
 		case R.id.menu_settings:
@@ -587,6 +422,51 @@ public class MainActivity extends Activity {
 		}
 		}
 		return super.dispatchKeyEvent(event);
+	}
+
+	@Override
+	public void onTransceiverStatus(boolean started) {
+		int resId = (started ? R.string.receiver_started
+				: R.string.receiver_stopped);
+		String log = MainActivity.this.getText(resId).toString();
+		Log.i(TAG_APILOG, log);
+		//
+		MyApplicationClass.clientStarted = started;
+		if (!started) {
+			MyApplicationClass.clientLogon = false;
+		}
+		Toast.makeText(MainActivity.this, log, Toast.LENGTH_SHORT).show();
+	}
+
+	@Override
+	public void onLoginStatus(boolean logining, int code, String text) {
+		if (code < 0)
+			Log.w(TAG_APILOG, String.format("%s(#%d)", text, code));
+		else
+			Log.i(TAG_APILOG, String.format("%s(#%d)", text, code));
+		//
+		if (logining) {
+			Toast.makeText(MainActivity.this, "正在登录...", Toast.LENGTH_SHORT)
+					.show();
+		}
+		ActionBar actionBar = (ActionBar) findViewById(R.id.actionbar);
+		actionBar.setProgressBarVisibility(logining ? View.VISIBLE : View.GONE);
+	}
+
+	@Override
+	public void onMessageStatus(String msgId, int code, String text) {
+		// TODO 处理消息发送反馈
+		if (code < 0)
+			Log.w(TAG_APILOG,
+					String.format("msg#%d: %s(#%d)", msgId, text, code));
+		else
+			Log.w(TAG_APILOG,
+					String.format("msg#%d: %s(#%d)", msgId, text, code));
+	}
+
+	@Override
+	public void onMessageReceived(MyMessage msg) {
+		showNotification(msg);
 	}
 
 	private void showMessages(List<MyMessageSupportSave> messages) {
@@ -630,9 +510,6 @@ public class MainActivity extends Activity {
 		if (MyApplicationClass.clientStarted)
 			return;
 
-		Toast.makeText(this, getText(R.string.receiver_starting),
-				Toast.LENGTH_SHORT).show();
-
 		// 获取最新设置
 		String clientPassword = MyApplicationClass.userSettings
 				.getClientPassword().trim();
@@ -649,42 +526,23 @@ public class MainActivity extends Activity {
 				MyApplicationClass.userSettings.getClientId(), clientPassword);
 		NetworkParams networkParams = new NetworkParams();
 
-		Intent serviceIntent = new Intent();
-		serviceIntent
-				.setAction("com.tpsoft.pushnotification.ServiceController");
-		serviceIntent.putExtra("command", "start");
-		serviceIntent.putExtra("com.tpsoft.pushnotification.AppParams",
-				appParams.getBundle());
-		serviceIntent.putExtra("com.tpsoft.pushnotification.LoginParams",
-				loginParams.getBundle());
-		serviceIntent.putExtra("com.tpsoft.pushnotification.NetworkParams",
-				networkParams.getBundle());
-		sendBroadcast(serviceIntent);
+		mClient.startMessageTransceiver(appParams, loginParams, networkParams);
+
+		Toast.makeText(this, getText(R.string.receiver_starting),
+				Toast.LENGTH_SHORT).show();
 	}
 
 	private void stopMessageReceiver() {
 		if (!MyApplicationClass.clientStarted)
 			return;
 
+		mClient.stopMessageTransceiver();
+
 		Toast.makeText(this, getText(R.string.receiver_stopping),
 				Toast.LENGTH_SHORT).show();
-		Intent serviceIntent = new Intent();
-		serviceIntent
-				.setAction("com.tpsoft.pushnotification.ServiceController");
-		serviceIntent.putExtra("command", "stop");
-		sendBroadcast(serviceIntent);
 	}
 
-	private void showNotification(String msgText) {
-
-		// 解析消息文本
-		final MyMessage message;
-		try {
-			message = MyMessage.extractMessage(msgText);
-		} catch (Exception e) {
-			return;
-		}
-
+	private void showNotification(MyMessage message) {
 		// 获取图片URL及文件名
 		String senderIconUrl = null;
 		String msgAttachmentUrl = null;
@@ -701,7 +559,7 @@ public class MainActivity extends Activity {
 
 		// 为消息对话框准备数据
 		final Bundle msgParams = new Bundle();
-		msgParams.putInt("id", nextMsgId);
+		msgParams.putInt("id", MyApplicationClass.nextMsgId);
 		msgParams.putBoolean("alert", MyApplicationClass.ALERT_MSG);
 		if (message.getSender() != null)
 			msgParams.putString("sender", message.getSender());
@@ -713,7 +571,7 @@ public class MainActivity extends Activity {
 		//
 		final MyMessageSupportSave messageSupportSave = new MyMessageSupportSave(
 				message);
-		messageSupportSave.setMessageId(nextMsgId++);
+		messageSupportSave.setMessageId(MyApplicationClass.nextMsgId++);
 		//
 		if (senderIconUrl != null || msgAttachmentUrl != null) {
 			final String iconUrl = senderIconUrl;

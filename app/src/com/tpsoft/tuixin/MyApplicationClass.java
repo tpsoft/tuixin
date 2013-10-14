@@ -36,6 +36,7 @@ public class MyApplicationClass extends Application {
 	public static boolean clientStarted = false;
 	public static boolean clientLogon = false;
 	public static List<MyMessageSupportSave> latestMsgs = new ArrayList<MyMessageSupportSave>(); // 已有消息(按生成时间降序)
+	public static int nextMsgId = 0;
 
 	public static DBManager db;
 
