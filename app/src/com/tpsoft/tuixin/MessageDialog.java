@@ -44,7 +44,6 @@ public class MessageDialog extends Activity implements OnTouchListener,
 		OnGestureListener {
 
 	private class MyBroadcastReceiver extends BroadcastReceiver {
-		@SuppressWarnings("deprecation")
 		@Override
 		public void onReceive(Context context, Intent intent) {
 			if (intent.getAction().equals(MainActivity.MY_CLASSNAME)) {
@@ -60,6 +59,7 @@ public class MessageDialog extends Activity implements OnTouchListener,
 					if (msgCount == 2) {
 						// 出现第二条消息时允许手势
 						mGestureDetector = new GestureDetector(
+								MessageDialog.this,
 								(OnGestureListener) MessageDialog.this);
 						LinearLayout popupLayout = (LinearLayout) notifyView
 								.findViewById(R.id.message);
@@ -150,7 +150,7 @@ public class MessageDialog extends Activity implements OnTouchListener,
 
 	@Override
 	public void onConfigurationChanged(Configuration newConfig) {
-		// TODO 重新显示消息列表
+		// 重新显示消息列表
 		super.onConfigurationChanged(newConfig);
 	}
 

@@ -212,9 +212,9 @@ public class MainActivity extends Activity implements
 			case MESSAGE_UPDATE_TIME:
 				// 更新旧消息的生成时间，同时清除已旧的未收藏消息
 				Date now = new Date();
-				int msgCount = mActivity.get().msgCount;
+				boolean someViewsRemoved = false;
 				int i = 0;
-				while (i < msgCount) {
+				while (i < mActivity.get().msgCount) {
 					MyMessageSupportSave message = MyApplicationClass.latestMsgs
 							.get(i);
 					long diffInMinutes = (now.getTime() - message
@@ -230,16 +230,19 @@ public class MainActivity extends Activity implements
 								message.getGenerateTime()));
 						i++;
 					} else {
-						// 消息旧了且未收藏
+						// TODO 消息旧了且未收藏
 						mActivity.get().msg.removeViewAt(i); // 删除消息视图
-						if (i < msgCount - 1) {
+						if (i < mActivity.get().msgCount - 1) {
 							// 不是最后一条消息
 							mActivity.get().msg.removeViewAt(i); // 删除分隔符视图
 						}
 						MyApplicationClass.latestMsgs.remove(i); // 删除消息
-						msgCount--; // 计数器不变
+						someViewsRemoved = true;
+						mActivity.get().msgCount--; // 计数器不变
 					}
 				}
+				if (someViewsRemoved)
+					mActivity.get().msg.requestLayout();
 				break;
 			default:
 				super.handleMessage(msg);
@@ -323,9 +326,9 @@ public class MainActivity extends Activity implements
 		timer.schedule(new TimerTask() {
 			@Override
 			public void run() {
-				Message message = new Message();
-				message.what = MESSAGE_UPDATE_TIME;
-				msgHandler.sendMessage(message);
+				// Message message = new Message();
+				// message.what = MESSAGE_UPDATE_TIME;
+				// msgHandler.sendMessage(message);
 			}
 		}, 1000 * 60, 1000 * 60);
 
@@ -340,6 +343,9 @@ public class MainActivity extends Activity implements
 		// 装入已有消息
 		List<MyMessageSupportSave> messages = db.queryMessages(null,
 				LOAD_MSG_COUNT);
+		for (MyMessageSupportSave message : messages) {
+			message.setMessageId(MyApplicationClass.nextMsgId++);
+		}
 		MyApplicationClass.latestMsgs.addAll(messages);
 		showMessages(messages);
 	}
@@ -446,15 +452,18 @@ public class MainActivity extends Activity implements
 			Log.i(TAG_APILOG, String.format("%s(#%d)", text, code));
 		//
 		if (logining) {
-			Toast.makeText(MainActivity.this, "正在登录...", Toast.LENGTH_SHORT)
-					.show();
+			MyApplicationClass.clientLogon = false;
+		} else if (code == 0) {
+			MyApplicationClass.clientLogon = true;
+		} else {
+			MyApplicationClass.clientLogon = false;
 		}
 		ActionBar actionBar = (ActionBar) findViewById(R.id.actionbar);
 		actionBar.setProgressBarVisibility(logining ? View.VISIBLE : View.GONE);
 	}
 
 	@Override
-	public void onMessageStatus(String msgId, int code, String text) {
+	public void onMessageStatus(int msgId, int code, String text) {
 		// TODO 处理消息发送反馈
 		if (code < 0)
 			Log.w(TAG_APILOG,
@@ -526,20 +535,22 @@ public class MainActivity extends Activity implements
 				MyApplicationClass.userSettings.getClientId(), clientPassword);
 		NetworkParams networkParams = new NetworkParams();
 
-		mClient.startMessageTransceiver(appParams, loginParams, networkParams);
-
 		Toast.makeText(this, getText(R.string.receiver_starting),
 				Toast.LENGTH_SHORT).show();
+
+		mClient.startMessageTransceiver(appParams, loginParams, networkParams);
+
 	}
 
 	private void stopMessageReceiver() {
 		if (!MyApplicationClass.clientStarted)
 			return;
 
-		mClient.stopMessageTransceiver();
-
 		Toast.makeText(this, getText(R.string.receiver_stopping),
 				Toast.LENGTH_SHORT).show();
+
+		mClient.stopMessageTransceiver();
+
 	}
 
 	private void showNotification(MyMessage message) {
@@ -782,6 +793,28 @@ public class MainActivity extends Activity implements
 		TextView msgBodyView = (TextView) listItemView
 				.findViewById(R.id.msgBody);
 		msgBodyView.setText(message.getBody());
+		msgBodyView.setOnLongClickListener(new View.OnLongClickListener() {
+
+			@Override
+			public boolean onLongClick(View v) {
+				// 长按: 隐藏
+				int pos = msg.indexOfChild(listItemView);
+				msg.removeView(listItemView);
+				if (pos < (msgCount - 1) * 2) {
+					msg.removeViewAt(pos);
+				} else if (pos > 0) {
+					msg.removeViewAt(pos - 1);
+				}
+				MyApplicationClass.latestMsgs.remove(pos / 2);
+				//
+				messages.remove(message.getMessageId());
+				msgSenderIcons.remove(message.getMessageId());
+				msgSenderViews.remove(message.getMessageId());
+				//
+				msgCount--;
+				return false;
+			}
+		});
 		//
 		ImageView msgAttachmentView = (ImageView) listItemView
 				.findViewById(R.id.msgAttachment);
@@ -921,4 +954,5 @@ public class MainActivity extends Activity implements
 		i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
 		return i;
 	}
+
 }
