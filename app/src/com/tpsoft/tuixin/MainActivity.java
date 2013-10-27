@@ -58,6 +58,7 @@ import com.tpsoft.pushnotification.model.AppParams;
 import com.tpsoft.pushnotification.model.LoginParams;
 import com.tpsoft.pushnotification.model.MyMessage;
 import com.tpsoft.pushnotification.model.NetworkParams;
+import com.tpsoft.pushnotification.model.PublicAccount;
 import com.tpsoft.pushnotification.service.NotifyPushService;
 import com.tpsoft.tuixin.db.DBManager;
 import com.tpsoft.tuixin.model.MyMessageSupportSave;
@@ -82,7 +83,7 @@ public class MainActivity extends Activity implements
 			Locale.CHINESE);
 
 	private static final int LOAD_MSG_COUNT = 20; // 程序启动时自动加载的最近消息条数
-	private static final long LATEST_MSG_DURATION = 4 * 60; // 要保留在列表中的消息的生成时间与当前时间的最大差值(分钟，不包含已收藏的消息)
+	private static final long LATEST_MSG_DURATION = 24 * 60; // 要保留在列表中的消息的生成时间与当前时间的最大差值(分钟，不包含已收藏的消息)
 
 	private static final int MESSAGE_START_RECEIVER = 1;
 	private static final int MESSAGE_SHOW_NOTIFICATION = 2;
@@ -103,9 +104,10 @@ public class MainActivity extends Activity implements
 					// 收藏/取消收藏
 					boolean favorite = action.equals("favorite");
 					int id = intent.getIntExtra("id", -1);
-					if (id != -1) {
+					if (id != -1 && messages.containsKey(id)) {
 						MyMessageSupportSave message = messages.get(id);
-						ImageView msgSenderView = msgSenderViews.get(id);
+						ImageView msgSenderView = (ImageView) msgListItemViews
+								.get(id).findViewById(R.id.msgSender);
 						//
 						Bitmap senderIcon = msgSenderIcons.get(id);
 						if (favorite) {
@@ -125,6 +127,13 @@ public class MainActivity extends Activity implements
 							message.setRecordId(null);
 							msgSenderView.setImageBitmap(senderIcon);
 						}
+					}
+				} else if (action.equals("remove")) {
+					// 删除
+					int id = intent.getIntExtra("id", -1);
+					if (id != -1 && messages.containsKey(id)) {
+						removeMessageFromList(messages.get(id),
+								msgListItemViews.get(id));
 					}
 				}
 			} else if (intent.getAction().equals(MESSAGE_SEND_CLASSNAME)) {
@@ -212,7 +221,6 @@ public class MainActivity extends Activity implements
 			case MESSAGE_UPDATE_TIME:
 				// 更新旧消息的生成时间，同时清除已旧的未收藏消息
 				Date now = new Date();
-				boolean someViewsRemoved = false;
 				int i = 0;
 				while (i < mActivity.get().msgCount) {
 					MyMessageSupportSave message = MyApplicationClass.latestMsgs
@@ -226,23 +234,32 @@ public class MainActivity extends Activity implements
 								.getChildAt(i * 2);
 						TextView msgTimeView = (TextView) listItemView
 								.findViewById(R.id.msgTime);
-						msgTimeView.setText(mActivity.get().makeTimeString(now,
-								message.getGenerateTime()));
+						String newMsgTime = mActivity.get().makeTimeString(now,
+								message.getGenerateTime());
+						if (!msgTimeView.getText().toString()
+								.equals(newMsgTime)) {
+							msgTimeView.setText(newMsgTime);
+						}
 						i++;
 					} else {
-						// TODO 消息旧了且未收藏
-						mActivity.get().msg.removeViewAt(i); // 删除消息视图
+						// 消息旧了且未收藏
+						mActivity.get().msg.removeViewAt(i * 2); // 删除消息视图
 						if (i < mActivity.get().msgCount - 1) {
-							// 不是最后一条消息
-							mActivity.get().msg.removeViewAt(i); // 删除分隔符视图
+							// 不是最后一条消息:删除后面的分隔符
+							mActivity.get().msg.removeViewAt(i * 2);
+						} else if (i > 0) {
+							// 是最后一条消息但前面还有:删除前面的分隔符
 						}
 						MyApplicationClass.latestMsgs.remove(i); // 删除消息
-						someViewsRemoved = true;
+						//
+						mActivity.get().messages.remove(message.getMessageId());
+						mActivity.get().msgSenderIcons.remove(message
+								.getMessageId());
+						mActivity.get().msgListItemViews.remove(message
+								.getMessageId());
 						mActivity.get().msgCount--; // 计数器不变
 					}
 				}
-				if (someViewsRemoved)
-					mActivity.get().msg.requestLayout();
 				break;
 			default:
 				super.handleMessage(msg);
@@ -255,7 +272,7 @@ public class MainActivity extends Activity implements
 	private int msgCount = 0;
 	private Map<Integer/* msgId */, MyMessageSupportSave> messages = new HashMap<Integer, MyMessageSupportSave>();
 	private Map<Integer/* msgId */, Bitmap> msgSenderIcons = new HashMap<Integer, Bitmap>();
-	private Map<Integer/* msgId */, ImageView> msgSenderViews = new HashMap<Integer, ImageView>();
+	private Map<Integer/* msgId */, View> msgListItemViews = new HashMap<Integer, View>();
 
 	private LinearLayout msg;
 
@@ -293,12 +310,13 @@ public class MainActivity extends Activity implements
 		}
 
 		// 实例化客户端
-		mClient = new PushNotificationClient(this, this);
+		mClient = new PushNotificationClient(this);
+		mClient.addListener(this);
 
 		// 准备通知
 		mNM = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 
-		// 初始化消息和日志控件
+		// 初始化消息控件
 		msg = (LinearLayout) findViewById(R.id.msg);
 
 		// 创建 Handler 对象
@@ -326,9 +344,9 @@ public class MainActivity extends Activity implements
 		timer.schedule(new TimerTask() {
 			@Override
 			public void run() {
-				// Message message = new Message();
-				// message.what = MESSAGE_UPDATE_TIME;
-				// msgHandler.sendMessage(message);
+				Message message = new Message();
+				message.what = MESSAGE_UPDATE_TIME;
+				msgHandler.sendMessage(message);
 			}
 		}, 1000 * 60, 1000 * 60);
 
@@ -375,11 +393,16 @@ public class MainActivity extends Activity implements
 	@Override
 	public boolean onPrepareOptionsMenu(Menu menu) {
 		if (MyApplicationClass.clientStarted) {
-			menu.findItem(R.id.menu_start).setVisible(false);
-			menu.findItem(R.id.menu_stop).setVisible(true);
+			menu.findItem(R.id.menu_start_transceiver).setVisible(false);
+			menu.findItem(R.id.menu_stop_transceiver).setVisible(true);
 		} else {
-			menu.findItem(R.id.menu_start).setVisible(true);
-			menu.findItem(R.id.menu_stop).setVisible(false);
+			menu.findItem(R.id.menu_start_transceiver).setVisible(true);
+			menu.findItem(R.id.menu_stop_transceiver).setVisible(false);
+		}
+		if (MyApplicationClass.clientLogon) {
+			menu.findItem(R.id.menu_public_accounts_settings).setVisible(true);
+		} else {
+			menu.findItem(R.id.menu_public_accounts_settings).setVisible(false);
 		}
 		return true;
 	}
@@ -387,16 +410,20 @@ public class MainActivity extends Activity implements
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch (item.getItemId()) {
-		case R.id.menu_start:
+		case R.id.menu_start_transceiver:
 			// 启动消息收发器
 			startMessageReceiver();
 			break;
-		case R.id.menu_stop:
+		case R.id.menu_stop_transceiver:
 			// 停止消息收发器
 			stopMessageReceiver();
 			break;
-		case R.id.menu_settings:
-			// 打开设置界面
+		case R.id.menu_public_accounts_settings:
+			// 打开公众号设置界面
+			startActivity(new Intent(this, PublicAccountsActivity.class));
+			break;
+		case R.id.menu_system_settings:
+			// 打开系统设置界面
 			startActivity(new Intent(this, SettingsActivity.class));
 			break;
 		}
@@ -463,19 +490,39 @@ public class MainActivity extends Activity implements
 	}
 
 	@Override
-	public void onMessageStatus(int msgId, int code, String text) {
-		// TODO 处理消息发送反馈
+	public void onMessageSendStatus(int msgId, int code, String text) {
+		// 处理消息发送状态
 		if (code < 0)
 			Log.w(TAG_APILOG,
 					String.format("msg#%d: %s(#%d)", msgId, text, code));
 		else
 			Log.w(TAG_APILOG,
 					String.format("msg#%d: %s(#%d)", msgId, text, code));
+		Toast.makeText(this, String.format("消息%s", text), Toast.LENGTH_SHORT)
+				.show();
 	}
 
 	@Override
-	public void onMessageReceived(MyMessage msg) {
+	public void onNewMessageReceived(MyMessage msg) {
 		showNotification(msg);
+	}
+
+	@Override
+	public void onPublicAccountsReceived(PublicAccount[] accounts) {
+	}
+
+	@Override
+	public void onPublicAccountFollowed(String accountName) {
+
+	}
+
+	@Override
+	public void onPublicAccountUnfollowed(String accountName) {
+
+	}
+
+	@Override
+	public void onFollowedAccountsReceived(PublicAccount[] accounts) {
 	}
 
 	private void showMessages(List<MyMessageSupportSave> messages) {
@@ -701,7 +748,10 @@ public class MainActivity extends Activity implements
 			View listItemView = msg.getChildAt(i * 2);
 			TextView msgTimeView = (TextView) listItemView
 					.findViewById(R.id.msgTime);
-			msgTimeView.setText(makeTimeString(now, message.getGenerateTime()));
+			String newMsgTime = makeTimeString(now, message.getGenerateTime());
+			if (!msgTimeView.getText().toString().equals(newMsgTime)) {
+				msgTimeView.setText(newMsgTime);
+			}
 		}
 	}
 
@@ -716,7 +766,7 @@ public class MainActivity extends Activity implements
 		//
 		messages.put(message.getMessageId(), message);
 		msgSenderIcons.put(message.getMessageId(), senderIcon);
-		msgSenderViews.put(message.getMessageId(), msgSenderView);
+		msgListItemViews.put(message.getMessageId(), listItemView);
 		//
 		msgSenderView.setOnClickListener(new View.OnClickListener() {
 
@@ -798,20 +848,7 @@ public class MainActivity extends Activity implements
 			@Override
 			public boolean onLongClick(View v) {
 				// 长按: 隐藏
-				int pos = msg.indexOfChild(listItemView);
-				msg.removeView(listItemView);
-				if (pos < (msgCount - 1) * 2) {
-					msg.removeViewAt(pos);
-				} else if (pos > 0) {
-					msg.removeViewAt(pos - 1);
-				}
-				MyApplicationClass.latestMsgs.remove(pos / 2);
-				//
-				messages.remove(message.getMessageId());
-				msgSenderIcons.remove(message.getMessageId());
-				msgSenderViews.remove(message.getMessageId());
-				//
-				msgCount--;
+				removeMessageFromList(message, listItemView);
 				return false;
 			}
 		});
@@ -919,6 +956,26 @@ public class MainActivity extends Activity implements
 				startActivity(i);
 			}
 		});
+	}
+
+	private void removeMessageFromList(MyMessageSupportSave message,
+			View listItemView) {
+		int pos = msg.indexOfChild(listItemView);
+		msg.removeView(listItemView);
+		if (pos < (msgCount - 1) * 2) {
+			// 不是最后一条:删除后面的分隔符
+			msg.removeViewAt(pos);
+		} else if (pos > 0) {
+			// 是最后一条消息但前面还有:删除前面的分隔符
+			msg.removeViewAt(pos - 1);
+		}
+		MyApplicationClass.latestMsgs.remove(pos / 2);
+		//
+		messages.remove(message.getMessageId());
+		msgSenderIcons.remove(message.getMessageId());
+		msgListItemViews.remove(message.getMessageId());
+		//
+		msgCount--;
 	}
 
 	private String makeTimeString(Date now, Date time) {

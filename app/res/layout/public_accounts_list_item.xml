@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/public_accounts_list_item"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/public_accounts_list_item_unselected"
+    android:orientation="horizontal"
+    android:padding="4dp" >
+
+    <ImageView
+        android:id="@+id/accountAvatar"
+        android:layout_width="36dip"
+        android:layout_height="wrap_content"
+        android:layout_marginRight="4dip"
+        android:layout_marginTop="4dip"
+        android:adjustViewBounds="true"
+        android:contentDescription="@string/public_account_avatar"
+        android:cropToPadding="true"
+        android:scaleType="fitStart" />
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical" >
+
+        <RelativeLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="4dip" >
+
+            <TextView
+                android:id="@+id/accountName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginRight="56dip"
+                android:fontFamily="黑体"
+                android:text="@string/public_account_name"
+                android:textColor="#382d24"
+                android:textIsSelectable="true"
+                android:textSize="16sp" />
+
+            <LinearLayout
+                android:layout_width="56dip"
+                android:layout_height="wrap_content"
+                android:layout_alignParentRight="true"
+                android:orientation="vertical" >
+
+                <TextView
+                    android:id="@+id/accountType"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="宋体"
+                    android:gravity="right"
+                    android:maxLines="1"
+                    android:text="@string/public_account_type"
+                    android:textColor="@color/public_account_type"
+                    android:textIsSelectable="true"
+                    android:textSize="12sp" />
+            </LinearLayout>
+        </RelativeLayout>
+
+        <TextView
+            android:id="@+id/accountDesc"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="宋体"
+            android:text="@string/public_account_desc"
+            android:textColor="#382d24"
+            android:textIsSelectable="true"
+            android:textSize="14sp" />
+    </LinearLayout>
+
+</LinearLayout>

@@ -1,5 +1,6 @@
 package com.tpsoft.tuixin;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
@@ -23,6 +24,8 @@ import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.view.GestureDetector;
 import android.view.GestureDetector.OnGestureListener;
 import android.view.Gravity;
@@ -117,6 +120,9 @@ public class MessageDialog extends Activity implements OnTouchListener,
 
 	private Bitmap favoriteFlag;
 
+	private static final int MESSAGE_REMOVE_MESSAGE = 1;
+	private MessageHandler msgHandler;
+
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 
@@ -134,6 +140,9 @@ public class MessageDialog extends Activity implements OnTouchListener,
 		// 初始化收藏标志
 		favoriteFlag = BitmapFactory.decodeResource(
 				MessageDialog.this.getResources(), R.drawable.favorite);
+
+		// 创建 Handler 对象
+		msgHandler = new MessageHandler(this);
 
 		// 显示消息
 		showMessage();
@@ -307,8 +316,11 @@ public class MessageDialog extends Activity implements OnTouchListener,
 	private void updateNotifyView(final Bundle msgBundle, boolean updateMessage) {
 		// 消息编号
 		TextView msgIndex = (TextView) notifyView.findViewById(R.id.msgIndex);
-		if (msgCount > 1)
+		if (msgCount > 1) {
 			msgIndex.setText(String.format("%d/%d: ", msgNumber, msgCount));
+		} else {
+			msgIndex.setText("");
+		}
 
 		// 允许只更新消息编号
 		if (!updateMessage)
@@ -321,42 +333,31 @@ public class MessageDialog extends Activity implements OnTouchListener,
 		if (msgBundle.getBoolean("showIcon")) {
 			senderIcon = MyApplicationClass.loadImage(msgBundle
 					.getString("iconUrl"));
+			boolean favorite = msgBundle.getBoolean("favorite", false);
+			showSenderIcon(msgSender, senderIcon, favorite);
+			//
+			msgSender.setOnClickListener(new View.OnClickListener() {
+
+				@Override
+				public void onClick(View view) {
+					// 收藏/取消收藏
+					int id = msgBundle.getInt("id");
+					boolean favorite = msgBundle.getBoolean("favorite", false);
+					showSenderIcon(msgSender, senderIcon, !favorite);
+					//
+					Intent i = new Intent();
+					i.setAction(MainActivity.MESSAGE_DIALOG_CLASSNAME);
+					i.putExtra("action", favorite ? "unfavorite" : "favorite");
+					i.putExtra("id", id);
+					sendBroadcast(i);
+					//
+					msgBundle.putBoolean("favorite", !favorite);
+				}
+			});
 		} else {
 			senderIcon = null;
+			msgSender.setImageBitmap(null);
 		}
-		msgSender.setImageBitmap(senderIcon);
-		//
-		msgSender.setOnClickListener(new View.OnClickListener() {
-
-			@Override
-			public void onClick(View view) {
-				// 收藏/取消收藏
-				int id = msgBundle.getInt("id");
-				boolean favorite = msgBundle.getBoolean("favorite", false);
-				//
-				if (!favorite) {
-					// 收藏
-					Bitmap bitmap = Bitmap.createBitmap(senderIcon.copy(
-							Config.ARGB_8888, true));
-					Canvas canvas = new Canvas(bitmap);
-					canvas.drawBitmap(favoriteFlag, null, new Rect(0, 0,
-							senderIcon.getWidth(), senderIcon.getHeight()),
-							null);
-					msgSender.setImageBitmap(bitmap);
-				} else {
-					// 取消收藏
-					msgSender.setImageBitmap(senderIcon);
-				}
-				//
-				Intent i = new Intent();
-				i.setAction(MainActivity.MESSAGE_DIALOG_CLASSNAME);
-				i.putExtra("action", favorite ? "unfavorite" : "favorite");
-				i.putExtra("id", id);
-				sendBroadcast(i);
-				//
-				msgBundle.putBoolean("favorite", !favorite);
-			}
-		});
 		// 消息标题
 		TextView msgTitle = (TextView) notifyView.findViewById(R.id.msgTitle);
 		if (msgBundle.containsKey("title"))
@@ -391,6 +392,23 @@ public class MessageDialog extends Activity implements OnTouchListener,
 		// 消息正文
 		TextView msgBody = (TextView) notifyView.findViewById(R.id.msgBody);
 		msgBody.setText(msgBundle.getString("body"));
+		msgBody.setOnLongClickListener(new View.OnLongClickListener() {
+
+			@Override
+			public boolean onLongClick(View v) {
+				// 长按: 隐藏
+				Intent i = new Intent();
+				i.setAction(MainActivity.MESSAGE_DIALOG_CLASSNAME);
+				i.putExtra("action", "remove");
+				i.putExtra("id", msgBundle.getInt("id"));
+				sendBroadcast(i);
+				//
+				Message message = new Message();
+				message.what = MESSAGE_REMOVE_MESSAGE;
+				msgHandler.sendMessage(message);
+				return false;
+			}
+		});
 		// 图片
 		ImageView msgAttachment = (ImageView) notifyView
 				.findViewById(R.id.msgAttachment);
@@ -401,4 +419,62 @@ public class MessageDialog extends Activity implements OnTouchListener,
 		}
 		msgAttachment.setImageBitmap(msgAttachmentImage);
 	}
+
+	private void showSenderIcon(ImageView msgSender, Bitmap senderIcon,
+			boolean favorite) {
+		if (favorite) {
+			// 已收藏
+			Bitmap bitmap = Bitmap.createBitmap(senderIcon.copy(
+					Config.ARGB_8888, true));
+			Canvas canvas = new Canvas(bitmap);
+			canvas.drawBitmap(
+					favoriteFlag,
+					null,
+					new Rect(0, 0, senderIcon.getWidth(), senderIcon
+							.getHeight()), null);
+			msgSender.setImageBitmap(bitmap);
+		} else {
+			// 未收藏
+			msgSender.setImageBitmap(senderIcon);
+		}
+	}
+
+	private static class MessageHandler extends Handler {
+		private WeakReference<MessageDialog> mActivity;
+
+		public MessageHandler(MessageDialog activity) {
+			mActivity = new WeakReference<MessageDialog>(activity);
+		}
+
+		@Override
+		public void handleMessage(Message msg) {
+			switch (msg.what) {
+			case MESSAGE_REMOVE_MESSAGE:
+				if (mActivity.get().msgCount == 1) {
+					// 删除唯一的一条消息:关闭弹出窗口
+					mActivity.get().alertDialog.dismiss(); // 关闭消息对话框
+					mActivity.get().autoCloseTimer.cancel(); // 取消定时器
+					mActivity.get().closeSelf(); // 关闭窗口
+				} else {
+					// 删除一条后还有
+					mActivity.get().msgBundles
+							.remove(mActivity.get().msgNumber - 1);
+					if (mActivity.get().msgNumber < mActivity.get().msgCount) {
+						// 要删除的不是最后一条消息:显示后面的消息(当前消息编号不变)
+					} else {
+						// 要删除的是最后一条消息:显示前面的消息(当前消息编号减1)
+						mActivity.get().msgNumber--;
+					}
+					mActivity.get().msgCount--;
+					mActivity.get()
+							.updateNotifyView(
+									mActivity.get().msgBundles.get(mActivity
+											.get().msgNumber - 1), true);
+				}
+				break;
+			default:
+				super.handleMessage(msg);
+			}
+		}
+	};
 }

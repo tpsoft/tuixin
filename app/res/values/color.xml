@@ -13,4 +13,7 @@
     <color name="message_list_item_selected">#939ba2</color>
     <color name="message_list_item_unselected">#fff</color>
     
+    <color name="public_accounts_background">#fff</color>
+    <color name="public_accounts_list_item_unselected">#fff</color>
+    <color name="public_account_type">#c8c8c8</color>
 </resources>

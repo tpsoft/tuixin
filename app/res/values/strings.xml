@@ -10,9 +10,10 @@
     <string name="receiver_started">消息收发器已启动</string>
     <string name="receiver_stopped">消息收发器已停止</string>
     <string name="settings">系统设置</string>
-    <string name="menu_start">启动收发器</string>
-    <string name="menu_stop">停止收发器</string>
-    <string name="menu_settings">系统设置</string>
+    <string name="menu_start_transceiver">启动收发器</string>
+    <string name="menu_stop_transceiver">停止收发器</string>
+    <string name="menu_public_accounts_settings">公众号设置</string>
+    <string name="menu_system_settings">系统设置</string>
     <string name="service_started">服务已启动</string>
     <string name="service_stopped">服务已停止</string>
     <string name="settings_server">服务器</string>
@@ -59,4 +60,11 @@
     <string name="error_noreceiver">接收者不能为空</string>
     <string name="error_nocontent">消息内容不能为空</string>
 
+    <string name="public_accounts_settings">公众号设置</string>
+    <string name="public_accounts_loading">正在加载...</string>
+    <string name="public_account_avatar">公众号图标</string>
+    <string name="public_account_name">公众号名称</string>
+    <string name="public_account_type">公众号类型</string>
+    <string name="public_account_desc">公众号说明</string>
+    
 </resources>

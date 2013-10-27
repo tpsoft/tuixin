@@ -46,6 +46,10 @@
             android:theme="@android:style/Theme.NoTitleBar" >
         </activity>
         <activity
+            android:name=".PublicAccountsActivity"
+            android:theme="@android:style/Theme.NoTitleBar" >
+        </activity>
+        <activity
             android:name=".SettingsActivity"
             android:label="@string/settings"
             android:parentActivityName="android.preference.PreferenceActivity" >
