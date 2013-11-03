@@ -34,8 +34,10 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnTouchListener;
 import android.view.ViewGroup;
+import android.view.ViewGroup.LayoutParams;
 import android.view.Window;
 import android.view.WindowManager;
+import android.webkit.WebView;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -92,6 +94,10 @@ public class MessageDialog extends Activity implements OnTouchListener,
 						TextView msgBody = (TextView) notifyView
 								.findViewById(R.id.msgBody);
 						msgBody.setOnTouchListener(MessageDialog.this);
+						//
+						WebView msgBodyHtml = (WebView) notifyView
+								.findViewById(R.id.msgBodyHtml);
+						msgBodyHtml.setOnTouchListener(MessageDialog.this);
 						//
 						ImageView msgAttachment = (ImageView) notifyView
 								.findViewById(R.id.msgAttachment);
@@ -243,6 +249,25 @@ public class MessageDialog extends Activity implements OnTouchListener,
 		showAlertDialog(msgBundle);
 	}
 
+	@android.webkit.JavascriptInterface
+	public void sendMessage(final String receiver, final String title,
+			final String body) {
+		msgHandler.post(new Runnable() {
+
+			@Override
+			public void run() {
+				Intent i = new Intent();
+				i.setAction(MainActivity.MESSAGE_DIALOG_CLASSNAME);
+				i.putExtra("action", "sendMessage");
+				i.putExtra("receiver", receiver);
+				i.putExtra("title", title);
+				i.putExtra("body", body);
+				sendBroadcast(i);
+			}
+
+		});
+	}
+
 	private void showAlertDialog(Bundle msgBundle) {
 		AlertDialog.Builder builder;
 		builder = new AlertDialog.Builder(this);
@@ -313,6 +338,7 @@ public class MessageDialog extends Activity implements OnTouchListener,
 		finish();
 	}
 
+	@SuppressLint("SetJavaScriptEnabled")
 	private void updateNotifyView(final Bundle msgBundle, boolean updateMessage) {
 		// 消息编号
 		TextView msgIndex = (TextView) notifyView.findViewById(R.id.msgIndex);
@@ -390,25 +416,80 @@ public class MessageDialog extends Activity implements OnTouchListener,
 			msgTitle.setTextColor(Color.BLACK); // TODO 定义消息标题正常颜色常量
 		}
 		// 消息正文
-		TextView msgBody = (TextView) notifyView.findViewById(R.id.msgBody);
-		msgBody.setText(msgBundle.getString("body"));
-		msgBody.setOnLongClickListener(new View.OnLongClickListener() {
+		if (msgBundle.containsKey("type")
+				&& "text".equals(msgBundle.getString("type"))) {
 
-			@Override
-			public boolean onLongClick(View v) {
-				// 长按: 隐藏
-				Intent i = new Intent();
-				i.setAction(MainActivity.MESSAGE_DIALOG_CLASSNAME);
-				i.putExtra("action", "remove");
-				i.putExtra("id", msgBundle.getInt("id"));
-				sendBroadcast(i);
-				//
-				Message message = new Message();
-				message.what = MESSAGE_REMOVE_MESSAGE;
-				msgHandler.sendMessage(message);
-				return false;
-			}
-		});
+			TextView msgBody = (TextView) notifyView.findViewById(R.id.msgBody);
+			WebView msgBodyHtml = (WebView) notifyView
+					.findViewById(R.id.msgBodyHtml);
+			//
+			LayoutParams lp = msgBody.getLayoutParams();
+			lp.height = LayoutParams.WRAP_CONTENT;
+			msgBody.setLayoutParams(lp);
+			msgBody.setVisibility(View.VISIBLE);
+			//
+			LayoutParams lpHtml = msgBodyHtml.getLayoutParams();
+			lpHtml.height = 0;
+			msgBodyHtml.setLayoutParams(lpHtml);
+			msgBodyHtml.setVisibility(View.INVISIBLE);
+			//
+			msgBody.setText(msgBundle.getString("body"));
+			msgBody.setOnLongClickListener(new View.OnLongClickListener() {
+
+				@Override
+				public boolean onLongClick(View v) {
+					// 长按: 隐藏
+					Intent i = new Intent();
+					i.setAction(MainActivity.MESSAGE_DIALOG_CLASSNAME);
+					i.putExtra("action", "remove");
+					i.putExtra("id", msgBundle.getInt("id"));
+					sendBroadcast(i);
+					//
+					Message message = new Message();
+					message.what = MESSAGE_REMOVE_MESSAGE;
+					msgHandler.sendMessage(message);
+					return false;
+				}
+			});
+		} else {
+
+			TextView msgBody = (TextView) notifyView.findViewById(R.id.msgBody);
+			WebView msgBodyHtml = (WebView) notifyView
+					.findViewById(R.id.msgBodyHtml);
+			//
+			LayoutParams lp = msgBody.getLayoutParams();
+			lp.height = 0;
+			msgBody.setLayoutParams(lp);
+			msgBody.setVisibility(View.INVISIBLE);
+			//
+			LayoutParams lpHtml = msgBodyHtml.getLayoutParams();
+			lpHtml.height = LayoutParams.WRAP_CONTENT;
+			msgBodyHtml.setLayoutParams(lpHtml);
+			msgBodyHtml.setVisibility(View.VISIBLE);
+			msgBodyHtml.getSettings().setJavaScriptEnabled(true);
+			msgBodyHtml.getSettings().setLoadsImagesAutomatically(true);
+			msgBodyHtml.addJavascriptInterface(MessageDialog.this, "android");
+			//
+			msgBodyHtml.loadDataWithBaseURL(null, msgBundle.getString("body"),
+					"text/html", "UTF-8", null);
+			msgBodyHtml.setOnLongClickListener(new View.OnLongClickListener() {
+
+				@Override
+				public boolean onLongClick(View v) {
+					// 长按: 隐藏
+					Intent i = new Intent();
+					i.setAction(MainActivity.MESSAGE_DIALOG_CLASSNAME);
+					i.putExtra("action", "remove");
+					i.putExtra("id", msgBundle.getInt("id"));
+					sendBroadcast(i);
+					//
+					Message message = new Message();
+					message.what = MESSAGE_REMOVE_MESSAGE;
+					msgHandler.sendMessage(message);
+					return false;
+				}
+			});
+		}
 		// 图片
 		ImageView msgAttachment = (ImageView) notifyView
 				.findViewById(R.id.msgAttachment);

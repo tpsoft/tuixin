@@ -33,7 +33,7 @@
                 android:text="@string/msg_index"
                 android:textColor="#382d24"
                 android:textIsSelectable="false"
-                android:textSize="16sp" />
+                android:textSize="14sp" />
 
             <ImageView
                 android:id="@+id/msgSender"
@@ -82,8 +82,13 @@
             android:text="@string/msg_body"
             android:textColor="#382d24"
             android:textIsSelectable="true"
-            android:textSize="14sp" />
-
+            android:textSize="16sp" />
+	    <WebView
+	        android:id="@+id/msgBodyHtml"
+	        android:layout_width="fill_parent"
+	        android:layout_height="wrap_content"
+	        android:visibility="invisible" />
+        
         <ImageView
             android:id="@+id/msgAttachment"
             android:layout_width="fill_parent"

@@ -39,6 +39,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup.LayoutParams;
+import android.webkit.WebView;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
@@ -135,6 +136,12 @@ public class MainActivity extends Activity implements
 						removeMessageFromList(messages.get(id),
 								msgListItemViews.get(id));
 					}
+				} else if (action.equals("sendMessage")) {
+					// 发送消息
+					String receiver = intent.getStringExtra("receiver");
+					String title = intent.getStringExtra("title");
+					String body = intent.getStringExtra("body");
+					sendMessage(receiver, title, body);
 				}
 			} else if (intent.getAction().equals(MESSAGE_SEND_CLASSNAME)) {
 				// 消息发送通知
@@ -170,6 +177,7 @@ public class MainActivity extends Activity implements
 
 		@Override
 		public void handleMessage(Message msg) {
+			MyMessageSupportSave message;
 			switch (msg.what) {
 			case MESSAGE_START_RECEIVER:
 				mActivity.get().startMessageReceiver();
@@ -190,9 +198,9 @@ public class MainActivity extends Activity implements
 				} else {
 					msgParams.putBoolean("showAttachment", false);
 				}
+				message = (MyMessageSupportSave) msg.obj;
 				// 添加到消息列表
-				mActivity.get().showMsg((MyMessageSupportSave) msg.obj,
-						senderIcon, msgAttachment);
+				mActivity.get().showMsg(message, senderIcon, msgAttachment);
 				//
 				if (MyApplicationClass.userSettings.isPopupMsg()) {
 					// 显示/更新消息对话框
@@ -223,8 +231,7 @@ public class MainActivity extends Activity implements
 				Date now = new Date();
 				int i = 0;
 				while (i < mActivity.get().msgCount) {
-					MyMessageSupportSave message = MyApplicationClass.latestMsgs
-							.get(i);
+					message = MyApplicationClass.latestMsgs.get(i);
 					long diffInMinutes = (now.getTime() - message
 							.getGenerateTime().getTime()) / (1000 * 60);
 					if (diffInMinutes <= LATEST_MSG_DURATION
@@ -525,6 +532,26 @@ public class MainActivity extends Activity implements
 	public void onFollowedAccountsReceived(PublicAccount[] accounts) {
 	}
 
+	@android.webkit.JavascriptInterface
+	public void sendMessage(final String receiver, final String title,
+			final String body) {
+		msgHandler.post(new Runnable() {
+
+			@Override
+			public void run() {
+				String ss = "send message \"" + title + "\" to " + receiver
+						+ ": " + body;
+				Log.d(TAG_MAINLOG, ss);
+				MyMessage msg = new MyMessage();
+				msg.setReceiver(receiver);
+				msg.setTitle(title);
+				msg.setBody(body);
+				mClient.sendMessage(MyApplicationClass.nextMsgId++, msg);
+			}
+
+		});
+	}
+
 	private void showMessages(List<MyMessageSupportSave> messages) {
 		Date now = new Date();
 
@@ -623,6 +650,8 @@ public class MainActivity extends Activity implements
 			msgParams.putString("sender", message.getSender());
 		if (message.getTitle() != null && !message.getTitle().equals(""))
 			msgParams.putString("title", message.getTitle());
+		if (message.getType() != null && !message.getType().equals(""))
+			msgParams.putString("type", message.getType());
 		msgParams.putString("body", message.getBody());
 		if (message.getUrl() != null && !message.getUrl().equals(""))
 			msgParams.putString("url", message.getUrl());
@@ -755,7 +784,7 @@ public class MainActivity extends Activity implements
 		}
 	}
 
-	@SuppressLint("ResourceAsColor")
+	@SuppressLint({ "ResourceAsColor", "SetJavaScriptEnabled" })
 	private View makeMessageView(Date now, final MyMessageSupportSave message,
 			final Bitmap senderIcon, final Bitmap msgAttachment) {
 		LayoutInflater inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
@@ -840,18 +869,54 @@ public class MainActivity extends Activity implements
 			});
 		}
 		//
-		TextView msgBodyView = (TextView) listItemView
-				.findViewById(R.id.msgBody);
-		msgBodyView.setText(message.getBody());
-		msgBodyView.setOnLongClickListener(new View.OnLongClickListener() {
+		if ("html".equals(message.getType())) {
+			// HTML消息
+			TextView msgBodyView = (TextView) listItemView
+					.findViewById(R.id.msgBody);
+			WebView msgBodyHtmlView = (WebView) listItemView
+					.findViewById(R.id.msgBodyHtml);
+			//
+			LayoutParams lp = msgBodyView.getLayoutParams();
+			lp.height = 0;
+			msgBodyView.setLayoutParams(lp);
+			msgBodyView.setVisibility(View.INVISIBLE);
+			//
+			LayoutParams lpHtml = msgBodyHtmlView.getLayoutParams();
+			lpHtml.height = LayoutParams.WRAP_CONTENT;
+			msgBodyHtmlView.setLayoutParams(lpHtml);
+			msgBodyHtmlView.setVisibility(View.VISIBLE);
+			msgBodyHtmlView.getSettings().setJavaScriptEnabled(true);
+			msgBodyHtmlView.getSettings().setLoadsImagesAutomatically(true);
+			msgBodyHtmlView
+					.addJavascriptInterface(MainActivity.this, "android");
+			//
+			msgBodyHtmlView.loadDataWithBaseURL(null, message.getBody(),
+					"text/html", "UTF-8", null);
+			msgBodyHtmlView
+					.setOnLongClickListener(new View.OnLongClickListener() {
 
-			@Override
-			public boolean onLongClick(View v) {
-				// 长按: 隐藏
-				removeMessageFromList(message, listItemView);
-				return false;
-			}
-		});
+						@Override
+						public boolean onLongClick(View v) {
+							// 长按: 隐藏
+							removeMessageFromList(message, listItemView);
+							return false;
+						}
+					});
+		} else {
+			// 文本消息
+			TextView msgBodyView = (TextView) listItemView
+					.findViewById(R.id.msgBody);
+			msgBodyView.setText(message.getBody());
+			msgBodyView.setOnLongClickListener(new View.OnLongClickListener() {
+
+				@Override
+				public boolean onLongClick(View v) {
+					// 长按: 隐藏
+					removeMessageFromList(message, listItemView);
+					return false;
+				}
+			});
+		}
 		//
 		ImageView msgAttachmentView = (ImageView) listItemView
 				.findViewById(R.id.msgAttachment);

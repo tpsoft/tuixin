@@ -42,7 +42,7 @@
                 android:textSize="16sp" />
 
             <LinearLayout
-                android:layout_width="56dip"
+                android:layout_width="64dip"
                 android:layout_height="wrap_content"
                 android:layout_alignParentRight="true"
                 android:orientation="vertical" >
@@ -57,7 +57,7 @@
                     android:text="@string/msg_time"
                     android:textColor="@color/msg_time"
                     android:textIsSelectable="true"
-                    android:textSize="12sp" />
+                    android:textSize="14sp" />
 
                 <ImageView
                     android:id="@+id/msgActions"
@@ -79,12 +79,17 @@
             android:id="@+id/msgBody"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:fontFamily="宋体"
+            android:fontFamily="黑体"
             android:text="@string/msg_body"
             android:textColor="#382d24"
             android:textIsSelectable="true"
-            android:textSize="14sp" />
-
+            android:textSize="16sp" />
+	    <WebView
+	        android:id="@+id/msgBodyHtml"
+	        android:layout_width="fill_parent"
+	        android:layout_height="0dip"
+	        android:visibility="invisible" />
+        
         <ImageView
             android:id="@+id/msgAttachment"
             android:layout_width="fill_parent"
