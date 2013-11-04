@@ -19,10 +19,8 @@ import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -38,6 +36,7 @@ import android.view.ViewGroup.LayoutParams;
 import android.view.Window;
 import android.view.WindowManager;
 import android.webkit.WebView;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -388,32 +387,48 @@ public class MessageDialog extends Activity implements OnTouchListener,
 		TextView msgTitle = (TextView) notifyView.findViewById(R.id.msgTitle);
 		if (msgBundle.containsKey("title"))
 			msgTitle.setText(msgBundle.getString("title"));
-		else if (msgBundle.containsKey("sender"))
+		else if (msgBundle.containsKey("sender")) {
 			msgTitle.setText("自 " + msgBundle.getString("sender") + ": ");
-		else
-			msgTitle.setText(R.string.msg_notitle);
-		if (msgBundle.containsKey("url")) {
-			final String url = msgBundle.getString("url");
-			if (url != null && !url.equals("")) {
-				msgTitle.setClickable(true);
-				msgTitle.setTextColor(Color.BLUE);
-				msgTitle.setOnClickListener(new View.OnClickListener() {
+			msgTitle.setClickable(true);
+			msgTitle.setOnClickListener(new View.OnClickListener() {
 
-					@Override
-					public void onClick(View view) {
-						try {
-							Intent browserIntent = new Intent(
-									Intent.ACTION_VIEW, Uri.parse(url));
-							startActivity(browserIntent);
-						} catch (Exception e) {
-							e.printStackTrace();
-						}
-					}
-				});
-			}
+				@Override
+				public void onClick(View view) {
+					final EditText editor = new EditText(MessageDialog.this);
+					new AlertDialog.Builder(MessageDialog.this)
+							.setTitle(
+									"回复" + msgBundle.getString("sender") + ":")
+							.setIcon(R.drawable.reply)
+							.setView(editor)
+							.setPositiveButton("确定",
+									new DialogInterface.OnClickListener() {
+
+										@Override
+										public void onClick(
+												DialogInterface dialog,
+												int which) {
+											String msgText = editor.getText()
+													.toString();
+											Intent i = new Intent();
+											i.setAction(MainActivity.MESSAGE_DIALOG_CLASSNAME);
+											i.putExtra("action", "sendMessage");
+											i.putExtra("receiver", msgBundle
+													.getString("sender"));
+											i.putExtra(
+													"title",
+													"回复"
+															+ msgBundle
+																	.getString("sender")
+															+ ":");
+											i.putExtra("body", msgText);
+											i.putExtra("record", true);
+											sendBroadcast(i);
+										}
+									}).setNegativeButton("取消", null).show();
+				}
+			});
 		} else {
-			msgTitle.setClickable(false);
-			msgTitle.setTextColor(Color.BLACK); // TODO 定义消息标题正常颜色常量
+			msgTitle.setText(R.string.msg_notitle);
 		}
 		// 消息正文
 		if (msgBundle.containsKey("type")

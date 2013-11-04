@@ -141,7 +141,19 @@ public class MainActivity extends Activity implements
 					String receiver = intent.getStringExtra("receiver");
 					String title = intent.getStringExtra("title");
 					String body = intent.getStringExtra("body");
+					boolean record = intent.getBooleanExtra("record", false);
 					sendMessage(receiver, title, body);
+					if (record) {
+						MyMessageSupportSave msg = new MyMessageSupportSave();
+						msg.setSender("me");
+						msg.setReceiver(receiver);
+						msg.setTitle(title);
+						msg.setBody(body);
+						msg.setGenerateTime(new Date());
+						showMsg(msg, BitmapFactory.decodeResource(
+								MainActivity.this.getResources(),
+								R.drawable.sent_message), null);
+					}
 				}
 			} else if (intent.getAction().equals(MESSAGE_SEND_CLASSNAME)) {
 				// 消息发送通知
@@ -499,14 +511,15 @@ public class MainActivity extends Activity implements
 	@Override
 	public void onMessageSendStatus(int msgId, int code, String text) {
 		// 处理消息发送状态
-		if (code < 0)
+		if (code < 0) {
 			Log.w(TAG_APILOG,
 					String.format("msg#%d: %s(#%d)", msgId, text, code));
-		else
-			Log.w(TAG_APILOG,
+			Toast.makeText(this, String.format("消息%s", text),
+					Toast.LENGTH_SHORT).show();
+		} else {
+			Log.i(TAG_APILOG,
 					String.format("msg#%d: %s(#%d)", msgId, text, code));
-		Toast.makeText(this, String.format("消息%s", text), Toast.LENGTH_SHORT)
-				.show();
+		}
 	}
 
 	@Override

@@ -50,7 +50,7 @@ public class PublicAccountsActivity extends Activity implements
 		ActionBar actionBar = (ActionBar) findViewById(R.id.actionbar);
 		actionBar.setTitle(R.string.public_accounts_settings);
 		actionBar.setHomeAction(new IntentAction(this, MainActivity
-				.createIntent(this), R.drawable.send_message));
+				.createIntent(this), R.drawable.public_account));
 		actionBar.setDisplayHomeAsUpEnabled(true);
 
 		// ³õÊ¼»¯¿Ø¼þ
