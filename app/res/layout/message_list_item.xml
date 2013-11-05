@@ -51,6 +51,7 @@
                     android:id="@+id/msgTime"
                     android:layout_width="fill_parent"
                     android:layout_height="wrap_content"
+                	android:layout_marginTop="8dip"
                     android:fontFamily="宋体"
                     android:gravity="right"
                     android:maxLines="1"
