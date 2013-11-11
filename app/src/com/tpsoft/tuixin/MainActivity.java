@@ -63,7 +63,7 @@ import com.tpsoft.pushnotification.model.PublicAccount;
 import com.tpsoft.pushnotification.service.NotifyPushService;
 import com.tpsoft.tuixin.db.DBManager;
 import com.tpsoft.tuixin.model.MyMessageSupportSave;
-import com.tpsoft.tuixin.utils.HttpDownloader;
+import com.tpsoft.tuixin.utils.HttpUtils;
 import com.tpsoft.tuixin.utils.ImageUtils;
 
 @SuppressLint("UseSparseArrays")
@@ -160,6 +160,13 @@ public class MainActivity extends Activity implements
 				String action = intent.getStringExtra("action");
 				if (action.equals("send")) {
 					int msgId = intent.getIntExtra("msgId", 0);
+					if (intent.hasExtra("errmsg")) {
+						Toast.makeText(MainActivity.this,
+								"发送消息失败：" + intent.getStringExtra("errmsg"),
+								Toast.LENGTH_LONG).show();
+						return;
+					}
+
 					MyMessage msg;
 					try {
 						msg = new MyMessage(intent.getBundleExtra("message"));
@@ -170,11 +177,15 @@ public class MainActivity extends Activity implements
 					//
 					mClient.sendMessage(msgId, msg);
 					//
+					Bitmap msgAttachment = null;
+					if (intent.hasExtra("photo")) {
+						msgAttachment = intent.getParcelableExtra("photo");
+					}
 					MyMessageSupportSave msg2 = new MyMessageSupportSave(msg);
 					msg2.setMessageId(msgId);
 					showMsg(msg2, BitmapFactory.decodeResource(
 							MainActivity.this.getResources(),
-							R.drawable.sent_message), null);
+							R.drawable.sent_message), msgAttachment);
 				}
 			}
 		}
@@ -298,7 +309,6 @@ public class MainActivity extends Activity implements
 	private NotificationManager mNM;
 	private MyBroadcastReceiver myBroadcastReceiver = null;
 
-	private HttpDownloader httpDownloader = new HttpDownloader();
 	private MessageHandler msgHandler;
 	private Timer timer = new Timer(true);
 
@@ -682,7 +692,7 @@ public class MainActivity extends Activity implements
 				public void run() {
 					if (iconUrl != null
 							&& !MyApplicationClass.existsImage(iconUrl)) {
-						InputStream imageStream = httpDownloader
+						InputStream imageStream = HttpUtils
 								.getInputStreamFromURL(iconUrl);
 						Bitmap image = null;
 						if (imageStream != null) {
@@ -701,7 +711,7 @@ public class MainActivity extends Activity implements
 					}
 					if (attachmentUrl != null
 							&& !MyApplicationClass.existsImage(attachmentUrl)) {
-						InputStream imageStream = httpDownloader
+						InputStream imageStream = HttpUtils
 								.getInputStreamFromURL(attachmentUrl);
 						Bitmap image = null;
 						if (imageStream != null) {

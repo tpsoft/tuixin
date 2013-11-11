@@ -15,6 +15,7 @@ public class UserSettings {
 
 	public static final String DEFAULT_SERVER_HOST = "isajia.com"; // 默认服务地址
 	public static final int DEFAULT_SERVER_PORT = 1234; // 默认服务端口
+	public static final int DEFAULT_UPLOAD_PORT = 2345; // 默认上传端口
 	private static final String DEFAULT_CLIENT_ID = "00000000000"; // 默认账号名称
 
 	private static final boolean DEFAULT_POPUP_MSG = true; // 默认弹出消息状态
@@ -22,6 +23,7 @@ public class UserSettings {
 
 	private String serverHost; // 服务器地址
 	private int serverPort; // 服务器端口
+	private int uploadPort; // 上传端口
 	private String clientId; // 客户ID
 	private String clientPassword; // 客户密码
 	private boolean popupMsg; // 弹出消息
@@ -37,6 +39,14 @@ public class UserSettings {
 
 	public int getServerPort() {
 		return serverPort;
+	}
+
+	public int getUploadPort() {
+		return uploadPort;
+	}
+
+	public void setUploadPort(int uploadPort) {
+		this.uploadPort = uploadPort;
 	}
 
 	public String getClientId() {
@@ -61,6 +71,8 @@ public class UserSettings {
 		serverHost = prefs.getString("serverHost", DEFAULT_SERVER_HOST);
 		serverPort = Integer.parseInt(prefs.getString("serverPort",
 				Integer.toString(DEFAULT_SERVER_PORT)));
+		uploadPort = Integer.parseInt(prefs.getString("uploadPort",
+				Integer.toString(DEFAULT_UPLOAD_PORT)));
 		clientId = prefs.getString("clientId", DEFAULT_CLIENT_ID);
 		if (clientId.equals(DEFAULT_CLIENT_ID)) {
 			clientId = readClientId(context);

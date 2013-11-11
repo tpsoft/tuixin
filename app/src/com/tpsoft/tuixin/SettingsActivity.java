@@ -21,6 +21,7 @@ public class SettingsActivity extends PreferenceActivity implements
 
 		EditTextPreference prefServerHost = (EditTextPreference) findPreference("serverHost");
 		EditTextPreference prefServerPort = (EditTextPreference) findPreference("serverPort");
+		EditTextPreference prefUploadPort = (EditTextPreference) findPreference("uploadPort");
 		EditTextPreference prefClientId = (EditTextPreference) findPreference("clientId");
 		CheckBoxPreference prefPopupMsg = (CheckBoxPreference) findPreference("popupMsg");
 		CheckBoxPreference prefPlaySound = (CheckBoxPreference) findPreference("playSound");
@@ -36,6 +37,7 @@ public class SettingsActivity extends PreferenceActivity implements
 		// 允许显示现有值
 		prefServerHost.setSummary(prefServerHost.getText());
 		prefServerPort.setSummary(prefServerPort.getText());
+		prefUploadPort.setSummary(prefUploadPort.getText());
 		prefClientId.setSummary(prefClientId.getText());
 		updateSummary(prefPopupMsg, prefPopupMsg.isChecked());
 		updateSummary(prefPlaySound, prefPlaySound.isChecked());
@@ -43,6 +45,7 @@ public class SettingsActivity extends PreferenceActivity implements
 		// 允许监听值改变事件
 		prefServerHost.setOnPreferenceChangeListener(this);
 		prefServerPort.setOnPreferenceChangeListener(this);
+		prefUploadPort.setOnPreferenceChangeListener(this);
 		prefClientId.setOnPreferenceChangeListener(this);
 		prefPopupMsg.setOnPreferenceChangeListener(this);
 		prefPlaySound.setOnPreferenceChangeListener(this);

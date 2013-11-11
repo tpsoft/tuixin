@@ -1,5 +1,8 @@
 package com.tpsoft.tuixin;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -10,6 +13,7 @@ import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.ContactsContract;
@@ -23,13 +27,20 @@ import com.markupartist.android.widget.ActionBar;
 import com.markupartist.android.widget.ActionBar.AbstractAction;
 import com.markupartist.android.widget.ActionBar.IntentAction;
 import com.tpsoft.pushnotification.model.MyMessage;
+import com.tpsoft.tuixin.utils.HttpUtils;
+import com.tpsoft.tuixin.utils.ImageUtils;
 
 public class SendMessageActivity extends Activity {
+
+	/* 用来标识请求联系人的activity */
+	public static final int CONTACTS_PICKED_WITH_DATA = 1;
 
 	private static List<String> latestReceivers = new ArrayList<String>();
 
 	private EditText receiverView, msgBodyView;
 	private ImageView receiversView;
+	private ImageView photoView;
+	private Bitmap msgPhoto;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -46,6 +57,7 @@ public class SendMessageActivity extends Activity {
 		receiverView = (EditText) findViewById(R.id.msgReceiver);
 		receiversView = (ImageView) findViewById(R.id.msgReceivers);
 		msgBodyView = (EditText) findViewById(R.id.msgContent);
+		photoView = (ImageView) findViewById(R.id.msgPhoto);
 
 		if (getIntent().hasExtra("receiver")) {
 			receiverView.setText(getIntent().getStringExtra("receiver"));
@@ -63,7 +75,7 @@ public class SendMessageActivity extends Activity {
 				Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
 				// BoD con't: CONTENT_TYPE instead of CONTENT_ITEM_TYPE
 				intent.setType(ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE);
-				startActivityForResult(intent, 1);
+				startActivityForResult(intent, CONTACTS_PICKED_WITH_DATA);
 				return false;
 			}
 		});
@@ -94,11 +106,35 @@ public class SendMessageActivity extends Activity {
 								}).show();
 			}
 		});
+		photoView.setOnClickListener(new View.OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				ImageUtils.doPickPhotoAction(SendMessageActivity.this);
+			}
+		});
 	}
 
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-		if (data != null) {
+		switch (requestCode) {
+		case ImageUtils.PHOTO_PICKED_WITH_DATA: {// 调用Gallery返回的
+			if (resultCode == Activity.RESULT_OK) {
+				msgPhoto = data.getParcelableExtra("data");
+				photoView.setImageBitmap(msgPhoto);
+			}
+			break;
+		}
+		case ImageUtils.CAMERA_WITH_DATA: // 照相机程序返回的,再次调用图片剪辑程序去修剪图片
+			if (resultCode == Activity.RESULT_OK) {
+				msgPhoto = data.getParcelableExtra("data");
+				photoView.setImageBitmap(msgPhoto);
+			}
+			break;
+		case CONTACTS_PICKED_WITH_DATA:
+			if (data == null)
+				return;
+
 			Uri uri = data.getData();
 
 			if (uri != null) {
@@ -122,7 +158,35 @@ public class SendMessageActivity extends Activity {
 					}
 				}
 			}
+			break;
 		}
+	}
+
+	@SuppressWarnings("unused")
+	private void doCropPhoto(File f) {
+		try {
+			// 启动gallery去剪辑这个照片
+			Intent intent = getCropImageIntent(Uri.fromFile(f));
+			startActivityForResult(intent, ImageUtils.PHOTO_PICKED_WITH_DATA);
+		} catch (Exception e) {
+			Toast.makeText(this, R.string.photoPickerNotFound,
+					Toast.LENGTH_LONG).show();
+		}
+	}
+
+	/**
+	 * Constructs an intent for image cropping. 调用图片剪辑程序
+	 */
+	private static Intent getCropImageIntent(Uri photoUri) {
+		Intent intent = new Intent("com.android.camera.action.CROP");
+		intent.setDataAndType(photoUri, "image/*");
+		intent.putExtra("crop", "true");
+		intent.putExtra("aspectX", 1);
+		intent.putExtra("aspectY", 1);
+		intent.putExtra("outputX", 80);
+		intent.putExtra("outputY", 80);
+		intent.putExtra("return-data", true);
+		return intent;
 	}
 
 	private class SendAction extends AbstractAction {
@@ -186,24 +250,61 @@ public class SendMessageActivity extends Activity {
 				return;
 			}
 
-			MyMessage msg = new MyMessage();
+			final MyMessage msg = new MyMessage();
 			msg.setSender("me");
 			msg.setReceiver(receiver);
 			msg.setBody(content);
 			msg.setGenerateTime(new Date());
 
-			int msgId = MyApplicationClass.nextMsgId++;
-
-			Intent i = new Intent();
+			final int msgId = MyApplicationClass.nextMsgId++;
+			final Intent i = new Intent();
 			i.setAction(MainActivity.MESSAGE_SEND_CLASSNAME);
 			i.putExtra("action", "send");
 			i.putExtra("msgId", msgId);
-			i.putExtra("message", msg.getBundle());
-			sendBroadcast(i);
 
-			finish();
+			if (msgPhoto == null) {
+				i.putExtra("message", msg.getBundle());
+				sendBroadcast(i);
+
+				finish();
+				return;
+			}
+
+			// 上传图片(不能在主线程中调用)
+			Toast.makeText(SendMessageActivity.this, R.string.photo_uploading,
+					Toast.LENGTH_LONG).show();
+			new Thread() {
+				public void run() {
+					try {
+						ByteArrayOutputStream baos = new ByteArrayOutputStream();
+						msgPhoto.compress(Bitmap.CompressFormat.PNG, 100, baos);
+						ByteArrayInputStream bais = new ByteArrayInputStream(
+								baos.toByteArray());
+						baos.close();
+
+						String downloadUrl = HttpUtils.uploadFile("image/png",
+								bais, "message_photo", "message_photo.png");
+						if (downloadUrl != null) {
+							msg.setAttachments(new MyMessage.Attachment[] { new MyMessage.Attachment(
+									"图片", "image/png", "图片.png", downloadUrl) });
+						}
+						bais.close();
+
+						MyApplicationClass.saveImage(downloadUrl, msgPhoto);
+						i.putExtra("photo", msgPhoto);
+						i.putExtra("message", msg.getBundle());
+					} catch (Exception e) {
+						i.putExtra(
+								"errmsg",
+								e.getMessage() == null ? "IOException" : e
+										.getMessage());
+					}
+
+					sendBroadcast(i);
+
+					finish();
+				}
+			}.start();
 		}
 	}
 }
-
-

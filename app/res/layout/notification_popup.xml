@@ -77,7 +77,6 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="2dp"
             android:fontFamily="宋体"
-            android:minLines="5"
             android:maxLines="10"
             android:text="@string/msg_body"
             android:textColor="#382d24"
@@ -98,8 +97,7 @@
             android:adjustViewBounds="true"
             android:contentDescription="@string/msg_attachment"
             android:cropToPadding="true"
-            android:scaleType="fitStart"
-            android:src="@drawable/avatar" />
+            android:scaleType="fitStart" />
     </LinearLayout>
 
 </LinearLayout>

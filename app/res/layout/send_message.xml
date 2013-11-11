@@ -40,10 +40,20 @@
     <EditText
         android:id="@+id/msgContent"
         android:layout_width="match_parent"
-        android:layout_height="fill_parent"
+        android:layout_height="184dip"
         android:ems="10"
         android:gravity="top"
         android:hint="@string/msg_content"
         android:inputType="textMultiLine" />
+
+    <ImageView
+        android:id="@+id/msgPhoto"
+        android:layout_width="match_parent"
+        android:layout_height="fill_parent"
+        android:adjustViewBounds="true"
+        android:contentDescription="@string/msg_photo"
+        android:cropToPadding="true"
+        android:scaleType="fitCenter"
+        android:src="@drawable/attachment" />
 
 </LinearLayout>

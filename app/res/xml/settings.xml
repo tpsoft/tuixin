@@ -16,7 +16,13 @@
             android:persistent="true"
             android:summary="@string/server_port_summary"
             android:title="@string/server_port" />
-    </PreferenceCategory>
+        <EditTextPreference
+            android:defaultValue="2345"
+            android:key="uploadPort"
+            android:persistent="true"
+            android:summary="@string/upload_port_summary"
+            android:title="@string/upload_port" />
+        </PreferenceCategory>
     <PreferenceCategory
         android:key="client"
         android:title="@string/settings_client" >
