@@ -77,7 +77,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="2dp"
             android:fontFamily="宋体"
-            android:maxLines="10"
+            android::maxLines="10"
             android:text="@string/msg_body"
             android:textColor="#382d24"
             android:textIsSelectable="true"

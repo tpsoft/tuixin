@@ -913,8 +913,8 @@ public class MainActivity extends Activity implements
 			msgBodyHtmlView
 					.addJavascriptInterface(MainActivity.this, "android");
 			//
-			msgBodyHtmlView.loadDataWithBaseURL(null, message.getBody(),
-					"text/html", "UTF-8", null);
+			msgBodyHtmlView.loadDataWithBaseURL("file:///android_asset/",
+					message.getBody(), "text/html", "UTF-8", null);
 			msgBodyHtmlView
 					.setOnLongClickListener(new View.OnLongClickListener() {
 

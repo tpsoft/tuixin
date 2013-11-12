@@ -485,7 +485,7 @@ public class MessageDialog extends Activity implements OnTouchListener,
 			msgBodyHtml.getSettings().setLoadsImagesAutomatically(true);
 			msgBodyHtml.addJavascriptInterface(MessageDialog.this, "android");
 			//
-			msgBodyHtml.loadDataWithBaseURL(null, msgBundle.getString("body"),
+			msgBodyHtml.loadDataWithBaseURL("file:///android_asset/", msgBundle.getString("body"),
 					"text/html", "UTF-8", null);
 			msgBodyHtml.setOnLongClickListener(new View.OnLongClickListener() {
 
