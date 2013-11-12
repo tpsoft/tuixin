@@ -896,17 +896,10 @@ public class MainActivity extends Activity implements
 			// HTML消息
 			TextView msgBodyView = (TextView) listItemView
 					.findViewById(R.id.msgBody);
+			msgBodyView.setVisibility(View.GONE);
+			//
 			WebView msgBodyHtmlView = (WebView) listItemView
 					.findViewById(R.id.msgBodyHtml);
-			//
-			LayoutParams lp = msgBodyView.getLayoutParams();
-			lp.height = 0;
-			msgBodyView.setLayoutParams(lp);
-			msgBodyView.setVisibility(View.INVISIBLE);
-			//
-			LayoutParams lpHtml = msgBodyHtmlView.getLayoutParams();
-			lpHtml.height = LayoutParams.WRAP_CONTENT;
-			msgBodyHtmlView.setLayoutParams(lpHtml);
 			msgBodyHtmlView.setVisibility(View.VISIBLE);
 			msgBodyHtmlView.getSettings().setJavaScriptEnabled(true);
 			msgBodyHtmlView.getSettings().setLoadsImagesAutomatically(true);

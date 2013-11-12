@@ -88,8 +88,8 @@
 	    <WebView
 	        android:id="@+id/msgBodyHtml"
 	        android:layout_width="fill_parent"
-	        android:layout_height="0dip"
-	        android:visibility="invisible" />
+	        android:layout_height="wrap_content"
+	        android:visibility="gone" />
         
         <ImageView
             android:id="@+id/msgAttachment"

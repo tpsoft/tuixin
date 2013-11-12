@@ -435,17 +435,10 @@ public class MessageDialog extends Activity implements OnTouchListener,
 				&& "text".equals(msgBundle.getString("type"))) {
 
 			TextView msgBody = (TextView) notifyView.findViewById(R.id.msgBody);
+			msgBody.setVisibility(View.GONE);
+			//
 			WebView msgBodyHtml = (WebView) notifyView
 					.findViewById(R.id.msgBodyHtml);
-			//
-			LayoutParams lp = msgBody.getLayoutParams();
-			lp.height = LayoutParams.WRAP_CONTENT;
-			msgBody.setLayoutParams(lp);
-			msgBody.setVisibility(View.VISIBLE);
-			//
-			LayoutParams lpHtml = msgBodyHtml.getLayoutParams();
-			lpHtml.height = 0;
-			msgBodyHtml.setLayoutParams(lpHtml);
 			msgBodyHtml.setVisibility(View.INVISIBLE);
 			//
 			msgBody.setText(msgBundle.getString("body"));
@@ -469,17 +462,10 @@ public class MessageDialog extends Activity implements OnTouchListener,
 		} else {
 
 			TextView msgBody = (TextView) notifyView.findViewById(R.id.msgBody);
-			WebView msgBodyHtml = (WebView) notifyView
-					.findViewById(R.id.msgBodyHtml);
-			//
-			LayoutParams lp = msgBody.getLayoutParams();
-			lp.height = 0;
-			msgBody.setLayoutParams(lp);
 			msgBody.setVisibility(View.INVISIBLE);
 			//
-			LayoutParams lpHtml = msgBodyHtml.getLayoutParams();
-			lpHtml.height = LayoutParams.WRAP_CONTENT;
-			msgBodyHtml.setLayoutParams(lpHtml);
+			WebView msgBodyHtml = (WebView) notifyView
+					.findViewById(R.id.msgBodyHtml);
 			msgBodyHtml.setVisibility(View.VISIBLE);
 			msgBodyHtml.getSettings().setJavaScriptEnabled(true);
 			msgBodyHtml.getSettings().setLoadsImagesAutomatically(true);
