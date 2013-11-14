@@ -3,13 +3,15 @@
 
     <string name="app_name">推信</string>
     <string name="app_exit">长按返回键可退出程序……</string>
-    <string name="msg_list">消息列表</string>
-    <string name="msg_inbox">收件箱</string>
     
     <string name="receiver_starting">启动消息收发器……</string>
     <string name="receiver_stopping">停止消息收发器……</string>
     <string name="receiver_started">消息收发器已启动</string>
     <string name="receiver_stopped">消息收发器已停止</string>
+    
+    <string name="tab_1">推信</string>
+    <string name="tab_2">通讯录</string>
+    <string name="tab_3">我</string>
     
     <string name="settings">系统设置</string>
     <string name="menu_start_transceiver">启动收发器</string>

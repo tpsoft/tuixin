@@ -14,8 +14,8 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.app.NotificationManager;
+import android.app.TabActivity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -47,6 +47,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.PopupWindow;
+import android.widget.TabHost;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -66,8 +67,9 @@ import com.tpsoft.tuixin.model.MyMessageSupportSave;
 import com.tpsoft.tuixin.utils.HttpUtils;
 import com.tpsoft.tuixin.utils.ImageUtils;
 
+@SuppressWarnings("deprecation")
 @SuppressLint("UseSparseArrays")
-public class MainActivity extends Activity implements
+public class MainActivity  extends TabActivity implements
 		MessageTransceiverListener {
 
 	public static final String MY_CLASSNAME = "com.tpsoft.tuixin.MainActivity";
@@ -319,19 +321,23 @@ public class MainActivity extends Activity implements
 
 	private Bitmap favoriteFlag;
 
+	private TabHost tabHost;
+
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
+
+		// 设置外观
+		setTabs();
 
 		MyApplicationClass myApp = (MyApplicationClass) getApplication();
 		myApp.loadUserSettings();
 
 		ActionBar actionBar = (ActionBar) findViewById(R.id.actionbar);
 		actionBar.setHomeAction(new IntentAction(MainActivity.this,
-				createIntent(this), R.drawable.clock));
-		// actionBar.setHomeLogo(R.drawable.ic_launcher);
-		actionBar.setTitle(R.string.msg_list);
+				createIntent(this), R.drawable.ic_launcher));
+		actionBar.setTitle(R.string.app_name);
 		if (!MyApplicationClass.receiveOnly) {
 			Action sendMessageAction = new IntentAction(this, new Intent(this,
 					SendMessageActivity.class), R.drawable.send_message);
@@ -573,6 +579,41 @@ public class MainActivity extends Activity implements
 			}
 
 		});
+	}
+
+	private void setTabs() {
+		tabHost = getTabHost();
+
+		addTab(R.string.tab_1, R.drawable.clock);
+		addTab(R.string.tab_2, R.drawable.inbox);
+		addTab(R.string.tab_3, R.drawable.avatar);
+	}
+
+	private void addTab(int labelId, int drawableId) {
+		TabHost.TabSpec spec = tabHost.newTabSpec("tab" + labelId);
+
+		View tabIndicator = LayoutInflater.from(this).inflate(
+				R.layout.tab_indicator, getTabWidget(), false);
+
+		TextView title = (TextView) tabIndicator.findViewById(R.id.title);
+		title.setText(labelId);
+		ImageView icon = (ImageView) tabIndicator.findViewById(R.id.icon);
+		icon.setImageResource(drawableId);
+
+		spec.setIndicator(tabIndicator);
+		switch (labelId) {
+		case R.string.tab_1:
+			spec.setContent(R.id.main);
+			break;
+		case R.string.tab_2:
+			spec.setContent(R.id.contacts);
+			break;
+		case R.string.tab_3:
+			spec.setContent(R.id.myself);
+			break;
+		}
+		tabHost.addTab(spec);
+
 	}
 
 	private void showMessages(List<MyMessageSupportSave> messages) {

@@ -435,11 +435,11 @@ public class MessageDialog extends Activity implements OnTouchListener,
 				&& "text".equals(msgBundle.getString("type"))) {
 
 			TextView msgBody = (TextView) notifyView.findViewById(R.id.msgBody);
-			msgBody.setVisibility(View.GONE);
-			//
+			msgBody.setVisibility(View.VISIBLE);
+			//INVISIBLE
 			WebView msgBodyHtml = (WebView) notifyView
 					.findViewById(R.id.msgBodyHtml);
-			msgBodyHtml.setVisibility(View.INVISIBLE);
+			msgBodyHtml.setVisibility(View.GONE);
 			//
 			msgBody.setText(msgBundle.getString("body"));
 			msgBody.setOnLongClickListener(new View.OnLongClickListener() {
@@ -462,7 +462,7 @@ public class MessageDialog extends Activity implements OnTouchListener,
 		} else {
 
 			TextView msgBody = (TextView) notifyView.findViewById(R.id.msgBody);
-			msgBody.setVisibility(View.INVISIBLE);
+			msgBody.setVisibility(View.GONE);
 			//
 			WebView msgBodyHtml = (WebView) notifyView
 					.findViewById(R.id.msgBodyHtml);
