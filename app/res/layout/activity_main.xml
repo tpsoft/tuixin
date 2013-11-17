@@ -24,7 +24,7 @@
             android:layout_above="@android:id/tabs" >
 
             <LinearLayout
-                android:id="@+id/main"
+                android:id="@+id/home"
                 android:layout_width="fill_parent"
                 android:layout_height="fill_parent"
                 android:orientation="vertical" >
@@ -52,6 +52,7 @@
                 android:id="@+id/contacts"
                 android:layout_width="fill_parent"
                 android:layout_height="fill_parent"
+                android:background="#FFF"
                 android:orientation="vertical" >
             </LinearLayout>
 
@@ -59,6 +60,7 @@
                 android:id="@+id/myself"
                 android:layout_width="fill_parent"
                 android:layout_height="fill_parent"
+                android:background="#FFF"
                 android:orientation="vertical" >
             </LinearLayout>
         </FrameLayout>

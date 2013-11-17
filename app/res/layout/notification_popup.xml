@@ -4,7 +4,7 @@
     android:id="@+id/message"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:background="@drawable/info_bg"
+    android:background="@drawable/message_popup_bg"
     android:contentDescription="240sp"
     android:minWidth="240sp"
     android:orientation="horizontal"
@@ -45,7 +45,7 @@
                 android:contentDescription="@string/msg_sender"
                 android:cropToPadding="true"
                 android:scaleType="fitStart"
-                android:src="@drawable/avatar" />
+                android:src="@drawable/sender_avatar" />
 
             <TextView
                 android:id="@+id/msgTitle"
@@ -68,7 +68,7 @@
                 android:layout_alignParentRight="true"
                 android:background="#00000000"
                 android:contentDescription="@string/close_button"
-                android:src="@drawable/close" />
+                android:src="@drawable/close_dialog" />
         </RelativeLayout>
 
         <TextView

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+
+    <PreferenceCategory
+        android:key="upload"
+        android:title="@string/settings_upload" >
+        <EditTextPreference
+            android:defaultValue="isajia.com"
+            android:key="uploadServer"
+            android:persistent="true"
+            android:summary="@string/upload_server_summary"
+            android:title="@string/upload_server" />
+        <EditTextPreference
+            android:defaultValue="2345"
+            android:key="uploadPort"
+            android:persistent="true"
+            android:summary="@string/upload_port_summary"
+            android:title="@string/upload_port" />
+    </PreferenceCategory>
+    <PreferenceCategory
+        android:key="message"
+        android:title="@string/settings_message" >
+        <CheckBoxPreference
+            android:defaultValue="true"
+            android:key="popupMsg"
+            android:persistent="true"
+            android:summary="@string/popup_msg_summary"
+            android:title="@string/popup_msg" />
+        <CheckBoxPreference
+            android:defaultValue="true"
+            android:key="playSound"
+            android:persistent="true"
+            android:summary="@string/play_sound_summary"
+            android:title="@string/play_sound" />
+    </PreferenceCategory>
+
+</PreferenceScreen>

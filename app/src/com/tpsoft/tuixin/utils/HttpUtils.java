@@ -143,7 +143,7 @@ public class HttpUtils {
 			String uploadedFilename) throws Exception {
 		String uploadFileActionUrl = String.format(
 				UPLOAD_FILE_ACTION_URL_FORMAT,
-				MyApplicationClass.userSettings.getServerHost(),
+				MyApplicationClass.userSettings.getUploadServer(),
 				MyApplicationClass.userSettings.getUploadPort());
 
 		final String end = "\r\n";

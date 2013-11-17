@@ -69,7 +69,7 @@ import com.tpsoft.tuixin.utils.ImageUtils;
 
 @SuppressWarnings("deprecation")
 @SuppressLint("UseSparseArrays")
-public class MainActivity  extends TabActivity implements
+public class MainActivity extends TabActivity implements
 		MessageTransceiverListener {
 
 	public static final String MY_CLASSNAME = "com.tpsoft.tuixin.MainActivity";
@@ -331,16 +331,14 @@ public class MainActivity  extends TabActivity implements
 		// 设置外观
 		setTabs();
 
-		MyApplicationClass myApp = (MyApplicationClass) getApplication();
-		myApp.loadUserSettings();
-
 		ActionBar actionBar = (ActionBar) findViewById(R.id.actionbar);
-		actionBar.setHomeAction(new IntentAction(MainActivity.this,
-				createIntent(this), R.drawable.ic_launcher));
+		// actionBar.setHomeAction(new IntentAction(MainActivity.this,
+		// createIntent(this), R.drawable.logo));
 		actionBar.setTitle(R.string.app_name);
 		if (!MyApplicationClass.receiveOnly) {
-			Action sendMessageAction = new IntentAction(this, new Intent(this,
-					SendMessageActivity.class), R.drawable.send_message);
+			Action sendMessageAction = new IntentAction(MainActivity.this,
+					new Intent(MainActivity.this, SendMessageActivity.class),
+					R.drawable.send_message);
 			actionBar.addAction(sendMessageAction);
 		}
 
@@ -391,7 +389,7 @@ public class MainActivity  extends TabActivity implements
 
 		// 初始化收藏标志
 		favoriteFlag = BitmapFactory.decodeResource(
-				MainActivity.this.getResources(), R.drawable.favorite);
+				MainActivity.this.getResources(), R.drawable.favorite_message);
 
 		// 装入已有消息
 		List<MyMessageSupportSave> messages = db.queryMessages(null,
@@ -454,12 +452,12 @@ public class MainActivity  extends TabActivity implements
 			stopMessageReceiver();
 			break;
 		case R.id.menu_public_accounts_settings:
-			// 打开公众号设置界面
+			// 打开公众号界面
 			startActivity(new Intent(this, PublicAccountsActivity.class));
 			break;
-		case R.id.menu_system_settings:
-			// 打开系统设置界面
-			startActivity(new Intent(this, SettingsActivity.class));
+		case R.id.menu_settings:
+			// 打开设置界面
+			startActivity(new Intent(this, UserSettingsActivity.class));
 			break;
 		}
 		return false;
@@ -484,8 +482,7 @@ public class MainActivity  extends TabActivity implements
 				// 提示退出
 				Toast.makeText(this, getText(R.string.app_exit),
 						Toast.LENGTH_SHORT).show();
-				boolean flag = false;
-				return flag;
+				return false;
 			}
 		}
 		}
@@ -507,21 +504,23 @@ public class MainActivity  extends TabActivity implements
 	}
 
 	@Override
-	public void onLoginStatus(boolean logining, int code, String text) {
+	public void onLogining(boolean logining) {
+		ActionBar actionBar = (ActionBar) findViewById(R.id.actionbar);
+		actionBar.setProgressBarVisibility(logining ? View.VISIBLE : View.GONE);
+	}
+
+	@Override
+	public void onLoginStatus(int code, String text) {
 		if (code < 0)
 			Log.w(TAG_APILOG, String.format("%s(#%d)", text, code));
 		else
 			Log.i(TAG_APILOG, String.format("%s(#%d)", text, code));
 		//
-		if (logining) {
-			MyApplicationClass.clientLogon = false;
-		} else if (code == 0) {
+		if (code == 0) {
 			MyApplicationClass.clientLogon = true;
 		} else {
 			MyApplicationClass.clientLogon = false;
 		}
-		ActionBar actionBar = (ActionBar) findViewById(R.id.actionbar);
-		actionBar.setProgressBarVisibility(logining ? View.VISIBLE : View.GONE);
 	}
 
 	@Override
@@ -584,9 +583,18 @@ public class MainActivity  extends TabActivity implements
 	private void setTabs() {
 		tabHost = getTabHost();
 
-		addTab(R.string.tab_1, R.drawable.clock);
-		addTab(R.string.tab_2, R.drawable.inbox);
-		addTab(R.string.tab_3, R.drawable.avatar);
+		addTab(R.string.tab_home, R.drawable.tab_home);
+		addTab(R.string.tab_contacts, R.drawable.tab_contacts);
+		addTab(R.string.tab_myself, R.drawable.tab_myself);
+
+		tabHost.setOnTabChangedListener(new TabHost.OnTabChangeListener() {
+
+			@Override
+			public void onTabChanged(String tabId) {
+				// Toast.makeText(MainActivity.this, tabId, Toast.LENGTH_SHORT)
+				// .show();
+			}
+		});
 	}
 
 	private void addTab(int labelId, int drawableId) {
@@ -602,13 +610,13 @@ public class MainActivity  extends TabActivity implements
 
 		spec.setIndicator(tabIndicator);
 		switch (labelId) {
-		case R.string.tab_1:
-			spec.setContent(R.id.main);
+		case R.string.tab_home:
+			spec.setContent(R.id.home);
 			break;
-		case R.string.tab_2:
+		case R.string.tab_contacts:
 			spec.setContent(R.id.contacts);
 			break;
-		case R.string.tab_3:
+		case R.string.tab_myself:
 			spec.setContent(R.id.myself);
 			break;
 		}
@@ -640,7 +648,7 @@ public class MainActivity  extends TabActivity implements
 						.decodeResource(
 								MainActivity.this.getResources(),
 								(message.getSender().equals("me") ? R.drawable.sent_message
-										: R.drawable.avatar));
+										: R.drawable.sender_avatar));
 			}
 			Bitmap msgAttachment = (msgAttachmentUrl != null ? MyApplicationClass
 					.loadImage(msgAttachmentUrl) : null);
@@ -658,19 +666,17 @@ public class MainActivity  extends TabActivity implements
 			return;
 
 		// 获取最新设置
+		String clientId = MyApplicationClass.userSettings.getClientId().trim();
 		String clientPassword = MyApplicationClass.userSettings
-				.getClientPassword().trim();
-		if (clientPassword.equals("")) {
-			clientPassword = MyApplicationClass.userSettings.getClientId();
-		}
+				.getClientPassword();
 
 		AppParams appParams = new AppParams(MyApplicationClass.APP_ID,
 				MyApplicationClass.APP_PASSWORD,
 				MyApplicationClass.LOGIN_PROTECT_KEY);
 		LoginParams loginParams = new LoginParams(
 				MyApplicationClass.userSettings.getServerHost(),
-				MyApplicationClass.userSettings.getServerPort(),
-				MyApplicationClass.userSettings.getClientId(), clientPassword);
+				MyApplicationClass.userSettings.getServerPort(), clientId,
+				clientPassword);
 		NetworkParams networkParams = new NetworkParams();
 
 		Toast.makeText(this, getText(R.string.receiver_starting),
@@ -823,8 +829,8 @@ public class MainActivity  extends TabActivity implements
 				now,
 				message,
 				senderIcon == null ? BitmapFactory.decodeResource(
-						MainActivity.this.getResources(), R.drawable.avatar)
-						: senderIcon, msgAttachment);
+						MainActivity.this.getResources(),
+						R.drawable.sender_avatar) : senderIcon, msgAttachment);
 		if (msgCount != 0) {
 			// 加消息分隔条
 			msg.addView(makeMessageSepView(), 0);
@@ -1008,17 +1014,16 @@ public class MainActivity  extends TabActivity implements
 		return sepView;
 	}
 
-	@SuppressWarnings("deprecation")
 	private void showMsgActionMenu(final MyMessage message,
 			final View listItemView) {
 		LinearLayout layout = (LinearLayout) LayoutInflater.from(
-				MainActivity.this).inflate(R.layout.dialog, null);
+				MainActivity.this).inflate(R.layout.message_actions, null);
 		final ListView listView = (ListView) layout
 				.findViewById(R.id.lv_dialog);
 		final boolean sentMessage = (message.getSender().equals("me"));
 		listView.setAdapter(new ArrayAdapter<String>(
 				MainActivity.this,
-				R.layout.text,
+				R.layout.message_action_text,
 				R.id.tv_text,
 				(sentMessage ? new String[] { MainActivity.this.getResources()
 						.getText(R.string.msg_sendagain).toString() }
@@ -1128,7 +1133,8 @@ public class MainActivity  extends TabActivity implements
 		return str;
 	}
 
-	public static Intent createIntent(Context context) {
+	@SuppressWarnings("unused")
+	private Intent createIntent(Context context) {
 		Intent i = new Intent(context, MainActivity.class);
 		i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
 		return i;

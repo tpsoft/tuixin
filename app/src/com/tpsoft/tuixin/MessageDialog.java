@@ -32,7 +32,6 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnTouchListener;
 import android.view.ViewGroup;
-import android.view.ViewGroup.LayoutParams;
 import android.view.Window;
 import android.view.WindowManager;
 import android.webkit.WebView;
@@ -144,7 +143,7 @@ public class MessageDialog extends Activity implements OnTouchListener,
 
 		// 初始化收藏标志
 		favoriteFlag = BitmapFactory.decodeResource(
-				MessageDialog.this.getResources(), R.drawable.favorite);
+				MessageDialog.this.getResources(), R.drawable.favorite_message);
 
 		// 创建 Handler 对象
 		msgHandler = new MessageHandler(this);
@@ -398,7 +397,7 @@ public class MessageDialog extends Activity implements OnTouchListener,
 					new AlertDialog.Builder(MessageDialog.this)
 							.setTitle(
 									"回复" + msgBundle.getString("sender") + ":")
-							.setIcon(R.drawable.reply)
+							.setIcon(R.drawable.reply_message)
 							.setView(editor)
 							.setPositiveButton("确定",
 									new DialogInterface.OnClickListener() {

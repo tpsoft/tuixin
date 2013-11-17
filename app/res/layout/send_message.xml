@@ -34,7 +34,7 @@
             android:contentDescription="@string/msg_receivers"
             android:cropToPadding="true"
             android:scaleType="fitStart"
-            android:src="@drawable/user_down" />
+            android:src="@drawable/select_receiver" />
     </RelativeLayout>
 
     <EditText
@@ -54,6 +54,6 @@
         android:contentDescription="@string/msg_photo"
         android:cropToPadding="true"
         android:scaleType="fitCenter"
-        android:src="@drawable/attachment" />
+        android:src="@drawable/message_attachment" />
 
 </LinearLayout>

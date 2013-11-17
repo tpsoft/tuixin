@@ -14,7 +14,7 @@ import android.graphics.BitmapFactory;
 import com.tpsoft.pushnotification.service.NotifyPushService;
 import com.tpsoft.tuixin.db.DBManager;
 import com.tpsoft.tuixin.model.MyMessageSupportSave;
-import com.tpsoft.tuixin.model.UserSettings;
+import com.tpsoft.tuixin.model.MySettings;
 import com.tpsoft.tuixin.utils.PlaySoundPool;
 
 public class MyApplicationClass extends Application {
@@ -31,7 +31,7 @@ public class MyApplicationClass extends Application {
 	// //////////////////////////////////////
 
 	public static PlaySoundPool playSoundPool;
-	public static UserSettings userSettings;
+	public static MySettings userSettings;
 
 	public static boolean clientStarted = false;
 	public static boolean clientLogon = false;
@@ -102,7 +102,7 @@ public class MyApplicationClass extends Application {
 	}
 
 	public void loadUserSettings() {
-		userSettings = new UserSettings(this);
+		userSettings = new MySettings(this);
 	}
 
 }

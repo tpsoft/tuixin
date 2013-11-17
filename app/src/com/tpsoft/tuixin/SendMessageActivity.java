@@ -25,7 +25,6 @@ import android.widget.Toast;
 
 import com.markupartist.android.widget.ActionBar;
 import com.markupartist.android.widget.ActionBar.AbstractAction;
-import com.markupartist.android.widget.ActionBar.IntentAction;
 import com.tpsoft.pushnotification.model.MyMessage;
 import com.tpsoft.tuixin.utils.HttpUtils;
 import com.tpsoft.tuixin.utils.ImageUtils;
@@ -37,6 +36,7 @@ public class SendMessageActivity extends Activity {
 
 	private static List<String> latestReceivers = new ArrayList<String>();
 
+	private ActionBar actionBar;
 	private EditText receiverView, msgBodyView;
 	private ImageView receiversView;
 	private ImageView photoView;
@@ -47,10 +47,9 @@ public class SendMessageActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.send_message);
 
-		ActionBar actionBar = (ActionBar) findViewById(R.id.actionbar);
+		actionBar = (ActionBar) findViewById(R.id.actionbar);
 		actionBar.setTitle(R.string.msg_send);
-		actionBar.setHomeAction(new IntentAction(this, MainActivity
-				.createIntent(this), R.drawable.send_message));
+		actionBar.setHomeAction(new ReturnAction());
 		actionBar.setDisplayHomeAsUpEnabled(true);
 		actionBar.addAction(new SendAction());
 
@@ -192,7 +191,7 @@ public class SendMessageActivity extends Activity {
 	private class SendAction extends AbstractAction {
 
 		public SendAction() {
-			super(R.drawable.send);
+			super(R.drawable.send_message);
 		}
 
 		@Override
@@ -305,6 +304,18 @@ public class SendMessageActivity extends Activity {
 					finish();
 				}
 			}.start();
+		}
+	}
+
+	private class ReturnAction extends AbstractAction {
+
+		public ReturnAction() {
+			super(R.drawable.app_logo);
+		}
+
+		@Override
+		public void performAction(View view) {
+			finish();
 		}
 	}
 }

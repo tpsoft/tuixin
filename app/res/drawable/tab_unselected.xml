@@ -1,25 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-	<item android:top="63dp">
-		<shape android:shape="rectangle">
-			<solid android:color="#a4aa71" />
-		</shape>
-	</item>
-	<item android:top="63dp" android:bottom="1px">
-		<shape android:shape="rectangle">
-			<solid android:color="#a4aa71" />
-		</shape>
-	</item>
-	<item android:left="@dimen/tab_space" android:right="@dimen/tab_space"> 
-		<shape android:shape="rectangle">
-			<corners android:bottomLeftRadius="0.0dp"
-				android:bottomRightRadius="0.0dp" 
-				android:topLeftRadius="@dimen/corner_radius"
-				android:topRightRadius="@dimen/corner_radius"
-				/>
-			<gradient android:angle="90" android:startColor="#a4aa71"
-				android:endColor="#a4aa71" />
-			<stroke android:width="1px" android:color="#a4aa71" />
-		</shape>
-	</item>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android" >
+
+    <item android:top="47dp">
+        <shape android:shape="rectangle" >
+            <solid android:color="#333333" />
+        </shape>
+    </item>
+    <item
+        android:bottom="1px"
+        android:top="47dp">
+        <shape android:shape="rectangle" >
+            <solid android:color="#333333" />
+        </shape>
+    </item>
+    <item
+        android:left="@dimen/tab_space"
+        android:right="@dimen/tab_space">
+        <shape android:shape="rectangle" >
+            <corners
+                android:bottomLeftRadius="0.0dp"
+                android:bottomRightRadius="0.0dp"
+                android:topLeftRadius="@dimen/corner_radius"
+                android:topRightRadius="@dimen/corner_radius" />
+
+            <gradient
+                android:angle="90"
+                android:endColor="#333333"
+                android:startColor="#333333" />
+
+            <stroke
+                android:width="1px"
+                android:color="#333333" />
+        </shape>
+    </item>
+
 </layer-list>

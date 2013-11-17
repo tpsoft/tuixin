@@ -6,47 +6,30 @@ import android.preference.EditTextPreference;
 import android.preference.Preference;
 import android.preference.Preference.OnPreferenceChangeListener;
 import android.preference.PreferenceActivity;
-import android.provider.Settings;
 
-import com.tpsoft.tuixin.model.UserSettings;
-
-public class SettingsActivity extends PreferenceActivity implements
+public class UserSettingsActivity extends PreferenceActivity implements
 		OnPreferenceChangeListener {
 
 	@SuppressWarnings("deprecation")
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		addPreferencesFromResource(R.xml.settings);
+		addPreferencesFromResource(R.xml.user_settings);
 
-		EditTextPreference prefServerHost = (EditTextPreference) findPreference("serverHost");
-		EditTextPreference prefServerPort = (EditTextPreference) findPreference("serverPort");
+		EditTextPreference prefUploadServer = (EditTextPreference) findPreference("uploadServer");
 		EditTextPreference prefUploadPort = (EditTextPreference) findPreference("uploadPort");
-		EditTextPreference prefClientId = (EditTextPreference) findPreference("clientId");
 		CheckBoxPreference prefPopupMsg = (CheckBoxPreference) findPreference("popupMsg");
 		CheckBoxPreference prefPlaySound = (CheckBoxPreference) findPreference("playSound");
 
-		// 生成客户端标识(电话号码)
-		if (prefClientId.getText().equals("")) {
-			String clientId = UserSettings.readClientId(this);
-			prefClientId.setText(clientId);
-			Settings.System.putString(getContentResolver(), "clientId",
-					clientId);
-		}
-
 		// 允许显示现有值
-		prefServerHost.setSummary(prefServerHost.getText());
-		prefServerPort.setSummary(prefServerPort.getText());
+		prefUploadServer.setSummary(prefUploadServer.getText());
 		prefUploadPort.setSummary(prefUploadPort.getText());
-		prefClientId.setSummary(prefClientId.getText());
 		updateSummary(prefPopupMsg, prefPopupMsg.isChecked());
 		updateSummary(prefPlaySound, prefPlaySound.isChecked());
 
 		// 允许监听值改变事件
-		prefServerHost.setOnPreferenceChangeListener(this);
-		prefServerPort.setOnPreferenceChangeListener(this);
+		prefUploadServer.setOnPreferenceChangeListener(this);
 		prefUploadPort.setOnPreferenceChangeListener(this);
-		prefClientId.setOnPreferenceChangeListener(this);
 		prefPopupMsg.setOnPreferenceChangeListener(this);
 		prefPlaySound.setOnPreferenceChangeListener(this);
 	}

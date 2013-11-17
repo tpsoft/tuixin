@@ -22,7 +22,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.markupartist.android.widget.ActionBar;
-import com.markupartist.android.widget.ActionBar.IntentAction;
+import com.markupartist.android.widget.ActionBar.AbstractAction;
 import com.tpsoft.pushnotification.client.MessageTransceiverListener;
 import com.tpsoft.pushnotification.client.PushNotificationClient;
 import com.tpsoft.pushnotification.model.MyMessage;
@@ -38,6 +38,8 @@ public class PublicAccountsActivity extends Activity implements
 	private LinearLayout accountsLayout;
 	private Bitmap followFlag;
 
+	private ActionBar actionBar;
+
 	private Map<String, View> listItemViews = new HashMap<String, View>();
 	private Map<String, Bitmap> accountAvatars = new HashMap<String, Bitmap>();
 	private Set<String> followedAccounts = new HashSet<String>();
@@ -47,10 +49,9 @@ public class PublicAccountsActivity extends Activity implements
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.public_accounts);
 
-		ActionBar actionBar = (ActionBar) findViewById(R.id.actionbar);
+		actionBar = (ActionBar) findViewById(R.id.actionbar);
 		actionBar.setTitle(R.string.public_accounts_settings);
-		actionBar.setHomeAction(new IntentAction(this, MainActivity
-				.createIntent(this), R.drawable.public_account));
+		actionBar.setHomeAction(new ReturnAction());
 		actionBar.setDisplayHomeAsUpEnabled(true);
 
 		// 初始化控件
@@ -61,9 +62,9 @@ public class PublicAccountsActivity extends Activity implements
 		mClient.addListener(this);
 
 		// 初始化关注标志
-		followFlag = BitmapFactory
-				.decodeResource(PublicAccountsActivity.this.getResources(),
-						R.drawable.favorite);
+		followFlag = BitmapFactory.decodeResource(
+				PublicAccountsActivity.this.getResources(),
+				R.drawable.favorite_message);
 
 		// 发送(所有)公众号查询请求
 		TextView tipText = new TextView(this);
@@ -83,7 +84,7 @@ public class PublicAccountsActivity extends Activity implements
 			if (accountAvatar == null) {
 				accountAvatar = BitmapFactory.decodeResource(
 						PublicAccountsActivity.this.getResources(),
-						R.drawable.avatar);
+						R.drawable.sender_avatar);
 			}
 			if (i != accounts.size() - 1) {
 				// 加消息分隔条
@@ -182,7 +183,11 @@ public class PublicAccountsActivity extends Activity implements
 	}
 
 	@Override
-	public void onLoginStatus(boolean logining, int code, String text) {
+	public void onLogining(boolean logining) {
+	}
+
+	@Override
+	public void onLoginStatus(int code, String text) {
 	}
 
 	@Override
@@ -226,6 +231,18 @@ public class PublicAccountsActivity extends Activity implements
 				// 给公众号图标绘制关注标志
 				drawFollowFlag(account.getName(), listItemView);
 			}
+		}
+	}
+
+	private class ReturnAction extends AbstractAction {
+
+		public ReturnAction() {
+			super(R.drawable.app_logo);
+		}
+
+		@Override
+		public void performAction(View view) {
+			finish();
 		}
 	}
 }
