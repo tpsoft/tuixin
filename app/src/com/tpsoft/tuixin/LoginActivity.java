@@ -64,6 +64,7 @@ public class LoginActivity extends Activity implements
 		super.onCreate(savedInstanceState);
 
 		setContentView(R.layout.activity_login);
+		getWindow().setBackgroundDrawableResource(R.drawable.loginwindow);
 
 		// 实例化客户端
 		mClient = new PushNotificationClient(this);
