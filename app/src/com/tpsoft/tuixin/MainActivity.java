@@ -139,29 +139,31 @@ public class MainActivity extends TabActivity implements
 								msgListItemViews.get(id));
 					}
 				} else if (action.equals("sendMessage")) {
-					// 发送消息
+					// 发送消息(回复)
+					int msgId = MyApplicationClass.nextMsgId++;
 					String receiver = intent.getStringExtra("receiver");
 					String title = intent.getStringExtra("title");
 					String body = intent.getStringExtra("body");
 					boolean record = intent.getBooleanExtra("record", false);
-					sendMessage(receiver, title, body);
+					sendMessage(msgId, receiver, title, body);
 					if (record) {
 						MyMessageSupportSave msg = new MyMessageSupportSave();
+						msg.setMessageId(msgId);
 						msg.setSender("me");
 						msg.setReceiver(receiver);
 						msg.setTitle(title);
 						msg.setBody(body);
 						msg.setGenerateTime(new Date());
-						showMsg(msg, BitmapFactory.decodeResource(
-								MainActivity.this.getResources(),
-								R.drawable.sent_message), null);
+						showMsg(msg,
+								BitmapFactory.decodeResource(
+										MainActivity.this.getResources(),
+										R.drawable.me), null, true);
 					}
 				}
 			} else if (intent.getAction().equals(MESSAGE_SEND_CLASSNAME)) {
 				// 消息发送通知
 				String action = intent.getStringExtra("action");
 				if (action.equals("send")) {
-					int msgId = intent.getIntExtra("msgId", 0);
 					if (intent.hasExtra("errmsg")) {
 						Toast.makeText(MainActivity.this,
 								"发送消息失败：" + intent.getStringExtra("errmsg"),
@@ -177,6 +179,9 @@ public class MainActivity extends TabActivity implements
 						return;
 					}
 					//
+					int msgId = MyApplicationClass.nextMsgId++;
+					msg.setSender("me");
+					//
 					mClient.sendMessage(msgId, msg);
 					//
 					Bitmap msgAttachment = null;
@@ -186,8 +191,8 @@ public class MainActivity extends TabActivity implements
 					MyMessageSupportSave msg2 = new MyMessageSupportSave(msg);
 					msg2.setMessageId(msgId);
 					showMsg(msg2, BitmapFactory.decodeResource(
-							MainActivity.this.getResources(),
-							R.drawable.sent_message), msgAttachment);
+							MainActivity.this.getResources(), R.drawable.me),
+							msgAttachment, true);
 				}
 			}
 		}
@@ -225,7 +230,8 @@ public class MainActivity extends TabActivity implements
 				}
 				message = (MyMessageSupportSave) msg.obj;
 				// 添加到消息列表
-				mActivity.get().showMsg(message, senderIcon, msgAttachment);
+				mActivity.get().showMsg(message, senderIcon, msgAttachment,
+						false);
 				//
 				if (MyApplicationClass.userSettings.isPopupMsg()) {
 					// 显示/更新消息对话框
@@ -526,14 +532,33 @@ public class MainActivity extends TabActivity implements
 	@Override
 	public void onMessageSendStatus(int msgId, int code, String text) {
 		// 处理消息发送状态
+		int ok = -1;
 		if (code < 0) {
+			// 失败
 			Log.w(TAG_APILOG,
 					String.format("msg#%d: %s(#%d)", msgId, text, code));
 			Toast.makeText(this, String.format("消息%s", text),
 					Toast.LENGTH_SHORT).show();
+			ok = 0;
+		} else if (code == 0) {
+			// 成功
+			ok = 1;
 		} else {
 			Log.i(TAG_APILOG,
 					String.format("msg#%d: %s(#%d)", msgId, text, code));
+		}
+		if (ok == 0 || ok == 1) {
+			// 成功或失败
+			View listItemView = msgListItemViews.get(msgId);
+			if (listItemView != null) {
+				ImageView msgStatusView = (ImageView) listItemView
+						.findViewById(R.id.msgStatus);
+				if (ok == 1) {
+					msgStatusView.setVisibility(View.GONE);
+				} else {
+					msgStatusView.setImageResource(R.drawable.message_error);
+				}
+			}
 		}
 	}
 
@@ -561,8 +586,8 @@ public class MainActivity extends TabActivity implements
 	}
 
 	@android.webkit.JavascriptInterface
-	public void sendMessage(final String receiver, final String title,
-			final String body) {
+	public void sendMessage(final int msgId, final String receiver,
+			final String title, final String body) {
 		msgHandler.post(new Runnable() {
 
 			@Override
@@ -574,7 +599,7 @@ public class MainActivity extends TabActivity implements
 				msg.setReceiver(receiver);
 				msg.setTitle(title);
 				msg.setBody(body);
-				mClient.sendMessage(MyApplicationClass.nextMsgId++, msg);
+				mClient.sendMessage(msgId, msg);
 			}
 
 		});
@@ -644,11 +669,10 @@ public class MainActivity extends TabActivity implements
 			Bitmap senderIcon = (senderIconUrl != null ? MyApplicationClass
 					.loadImage(senderIconUrl) : null);
 			if (senderIcon == null) {
-				senderIcon = BitmapFactory
-						.decodeResource(
-								MainActivity.this.getResources(),
-								(message.getSender().equals("me") ? R.drawable.sent_message
-										: R.drawable.sender_avatar));
+				senderIcon = BitmapFactory.decodeResource(MainActivity.this
+						.getResources(),
+						(message.getSender().equals("me") ? R.drawable.me
+								: R.drawable.sender_avatar));
 			}
 			Bitmap msgAttachment = (msgAttachmentUrl != null ? MyApplicationClass
 					.loadImage(msgAttachmentUrl) : null);
@@ -656,7 +680,8 @@ public class MainActivity extends TabActivity implements
 				// 加消息分隔条
 				msg.addView(makeMessageSepView());
 			}
-			msg.addView(makeMessageView(now, message, senderIcon, msgAttachment));
+			msg.addView(makeMessageView(now, message, senderIcon,
+					msgAttachment, message.getSender().equals("me")));
 			msgCount++;
 		}
 	}
@@ -786,7 +811,7 @@ public class MainActivity extends TabActivity implements
 			}.start();
 		} else {
 			// 添加到消息列表
-			showMsg(messageSupportSave, null, null);
+			showMsg(messageSupportSave, null, null, false);
 			//
 			if (MyApplicationClass.userSettings.isPopupMsg()) {
 				// 显示/更新消息对话框
@@ -817,7 +842,7 @@ public class MainActivity extends TabActivity implements
 	}
 
 	private void showMsg(MyMessageSupportSave message, Bitmap senderIcon,
-			Bitmap msgAttachment) {
+			Bitmap msgAttachment, boolean send) {
 		if (popupWindow != null) {
 			popupWindow.dismiss();
 		}
@@ -830,7 +855,8 @@ public class MainActivity extends TabActivity implements
 				message,
 				senderIcon == null ? BitmapFactory.decodeResource(
 						MainActivity.this.getResources(),
-						R.drawable.sender_avatar) : senderIcon, msgAttachment);
+						R.drawable.sender_avatar) : senderIcon, msgAttachment,
+				send);
 		if (msgCount != 0) {
 			// 加消息分隔条
 			msg.addView(makeMessageSepView(), 0);
@@ -856,12 +882,14 @@ public class MainActivity extends TabActivity implements
 
 	@SuppressLint({ "ResourceAsColor", "SetJavaScriptEnabled" })
 	private View makeMessageView(Date now, final MyMessageSupportSave message,
-			final Bitmap senderIcon, final Bitmap msgAttachment) {
+			final Bitmap senderIcon, final Bitmap msgAttachment, boolean send) {
 		LayoutInflater inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
 		final View listItemView = inflater.inflate(R.layout.message_list_item,
 				null);
 		final ImageView msgSenderView = (ImageView) listItemView
 				.findViewById(R.id.msgSender);
+		ImageView msgStatusView = (ImageView) listItemView
+				.findViewById(R.id.msgStatus);
 		//
 		messages.put(message.getMessageId(), message);
 		msgSenderIcons.put(message.getMessageId(), senderIcon);
@@ -908,6 +936,10 @@ public class MainActivity extends TabActivity implements
 		}
 
 		msgSenderView.setImageBitmap(bitmap);
+		//
+		if (send) {
+			msgStatusView.setVisibility(View.VISIBLE);
+		}
 		//
 		TextView msgTitleView = (TextView) listItemView
 				.findViewById(R.id.msgTitle);

@@ -34,7 +34,8 @@
             android:layout_marginBottom="16dp"
             android:fontFamily="sans-serif-light"
             android:text="@string/login_progress_hint"
-            android:textAppearance="?android:attr/textAppearanceSmall" />
+            android:textColor="@color/login_progress_hint"
+            android:textAppearance="?android:attr/textAppearanceMedium" />
         </LinearLayout>
 
     <!-- Login form -->
