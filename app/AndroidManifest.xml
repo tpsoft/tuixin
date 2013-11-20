@@ -6,7 +6,7 @@
 
     <uses-sdk
         android:minSdkVersion="8"
-        android:targetSdkVersion="17" />
+        android:targetSdkVersion="18" />
     <!-- targetSdkVersion高于10时在平板上无法显示设置菜单 -->
 
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -41,7 +41,8 @@
             android:name="com.tpsoft.tuixin.LoginActivity"
             android:launchMode="singleInstance"
             android:label="@string/title_activity_login"
-            android:windowSoftInputMode="adjustResize|stateVisible" >
+            android:windowSoftInputMode="adjustResize|stateVisible"
+            android:theme="@android:style/Theme.NoTitleBar" >
         </activity>
         <activity
             android:name="com.tpsoft.tuixin.MainActivity"

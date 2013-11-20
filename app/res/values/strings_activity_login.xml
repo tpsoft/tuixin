@@ -3,13 +3,14 @@
     <string name="title_activity_login">登录</string>
 
     <!-- Strings related to login -->
-    <string name="prompt_id">手机号/EMAIL地址/姓名</string>
+    <string name="prompt_id">手机号/Email地址/姓名</string>
     <string name="prompt_password">密码</string>
     <string name="auto_login">自动登录</string>
     <string name="action_sign_in_register"><b>登录</b>或注册</string>
     <string name="action_sign_in_short">用户登录</string>
     <string name="action_system_settings">系统设置</string>
     <string name="login_progress_signing_in">正在登录&#8230;</string>
+    <string name="login_progress_hint">按下返回键将取消登录</string>
     <string name="error_invalid_id">用户ID无效</string>
     <string name="error_invalid_password">密码太短</string>
     <string name="error_incorrect_password">密码不正确</string>

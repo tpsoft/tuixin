@@ -250,16 +250,13 @@ public class SendMessageActivity extends Activity {
 			}
 
 			final MyMessage msg = new MyMessage();
-			msg.setSender("me");
 			msg.setReceiver(receiver);
 			msg.setBody(content);
 			msg.setGenerateTime(new Date());
 
-			final int msgId = MyApplicationClass.nextMsgId++;
 			final Intent i = new Intent();
 			i.setAction(MainActivity.MESSAGE_SEND_CLASSNAME);
 			i.putExtra("action", "send");
-			i.putExtra("msgId", msgId);
 
 			if (msgPhoto == null) {
 				i.putExtra("message", msg.getBundle());
