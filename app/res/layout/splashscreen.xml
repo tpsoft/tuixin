@@ -38,11 +38,11 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="20dip"
         android:gravity="bottom"
-        android:shadowColor="#FFFFFF"
+        android:shadowColor="#0000FF"
         android:shadowDx="0"
         android:shadowDy="2"
         android:shadowRadius="1"
-        android:textColor="#444444"
+        android:textColor="#FFFFFF"
         android:textSize="20sp"
         android:typeface="serif" >
     </TextView>

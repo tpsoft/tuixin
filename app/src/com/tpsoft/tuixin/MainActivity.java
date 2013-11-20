@@ -530,15 +530,13 @@ public class MainActivity extends TabActivity implements
 	}
 
 	@Override
-	public void onMessageSendStatus(int msgId, int code, String text) {
+	public void onMessageSendStatus(int msgId, int code, final String text) {
 		// 处理消息发送状态
 		int ok = -1;
 		if (code < 0) {
 			// 失败
 			Log.w(TAG_APILOG,
 					String.format("msg#%d: %s(#%d)", msgId, text, code));
-			Toast.makeText(this, String.format("消息%s", text),
-					Toast.LENGTH_SHORT).show();
 			ok = 0;
 		} else if (code == 0) {
 			// 成功
@@ -557,6 +555,14 @@ public class MainActivity extends TabActivity implements
 					msgStatusView.setVisibility(View.GONE);
 				} else {
 					msgStatusView.setImageResource(R.drawable.message_error);
+					msgStatusView.setOnClickListener(new View.OnClickListener() {
+						
+						@Override
+						public void onClick(View v) {
+							Toast.makeText(MainActivity.this, String.format("消息%s", text),
+									Toast.LENGTH_SHORT).show();
+						}
+					});
 				}
 			}
 		}

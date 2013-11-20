@@ -40,6 +40,7 @@
                     android:id="@+id/msgStatus"
                     android:layout_width="16sp"
                     android:layout_height="16sp"
+                    android:layout_marginTop="4dip"
                     android:layout_marginRight="4dip"
                     android:adjustViewBounds="true"
                     android:cropToPadding="true"
@@ -66,11 +67,10 @@
 
                 <TextView
                     android:id="@+id/msgTime"
-                    android:layout_width="fill_parent"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dip"
+                    android:layout_gravity="center"
                     android:fontFamily="宋体"
-                    android:gravity="right"
                     android:maxLines="1"
                     android:text="@string/msg_time"
                     android:textColor="@color/msg_time"
@@ -79,11 +79,11 @@
 
                 <ImageView
                     android:id="@+id/msgActions"
-                    android:layout_width="fill_parent"
+                    android:layout_width="wrap_content"
                     android:layout_height="36dip"
-                    android:layout_marginBottom="-8dip"
-                    android:layout_marginRight="-16dip"
-                    android:layout_marginTop="-8dip"
+                    android:layout_gravity="center"
+                     android:layout_marginTop="-12dip"
+                    android:layout_marginBottom="-14dip"
                     android:adjustViewBounds="true"
                     android:contentDescription="@string/msg_actions"
                     android:cropToPadding="true"

@@ -26,7 +26,7 @@ public class SplashScreen extends Activity {
 		try {
 			PackageInfo pi = pm.getPackageInfo("com.tpsoft.tuixin", 0);
 			TextView versionNumber = (TextView) findViewById(R.id.app_version);
-			versionNumber.setText("°æ±¾ " + pi.versionName);
+			versionNumber.setText(pi.versionName + " °æ");
 		} catch (NameNotFoundException e) {
 			e.printStackTrace();
 		}
