@@ -25,13 +25,13 @@ import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.text.Layout;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -39,6 +39,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup.LayoutParams;
+import android.view.ViewTreeObserver;
 import android.webkit.WebView;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
@@ -91,6 +92,8 @@ public class MainActivity extends TabActivity implements
 	private static final int MESSAGE_START_RECEIVER = 1;
 	private static final int MESSAGE_SHOW_NOTIFICATION = 2;
 	private static final int MESSAGE_UPDATE_TIME = 3;
+	private static final int MESSAGE_EXPAND_MSGBODY = 4;
+	private static final int MESSAGE_SHRINK_MSGBODY = 5;
 
 	private class MyBroadcastReceiver extends BroadcastReceiver {
 
@@ -298,6 +301,25 @@ public class MainActivity extends TabActivity implements
 						mActivity.get().msgCount--; // 计数器不变
 					}
 				}
+				break;
+			case MESSAGE_EXPAND_MSGBODY:
+				// 扩展消息体部
+				int msgId = msg.arg1;
+				View listItemView = mActivity.get().msgListItemViews.get(msgId);
+				TextView msgBodyView = (TextView) listItemView
+						.findViewById(R.id.msgBody);
+				msgBodyView.setLines(Integer.MAX_VALUE);
+				msgBodyView.setMinLines(0);
+				msgBodyView.refreshDrawableState();
+				break;
+			case MESSAGE_SHRINK_MSGBODY:
+				// 收缩消息体部
+				msgId = msg.arg1;
+				listItemView = mActivity.get().msgListItemViews.get(msgId);
+				msgBodyView = (TextView) listItemView
+						.findViewById(R.id.msgBody);
+				msgBodyView.setMaxLines(2);
+				msgBodyView.refreshDrawableState();
 				break;
 			default:
 				super.handleMessage(msg);
@@ -555,14 +577,16 @@ public class MainActivity extends TabActivity implements
 					msgStatusView.setVisibility(View.GONE);
 				} else {
 					msgStatusView.setImageResource(R.drawable.message_error);
-					msgStatusView.setOnClickListener(new View.OnClickListener() {
-						
-						@Override
-						public void onClick(View v) {
-							Toast.makeText(MainActivity.this, String.format("消息%s", text),
-									Toast.LENGTH_SHORT).show();
-						}
-					});
+					msgStatusView
+							.setOnClickListener(new View.OnClickListener() {
+
+								@Override
+								public void onClick(View v) {
+									Toast.makeText(MainActivity.this,
+											String.format("消息%s", text),
+											Toast.LENGTH_SHORT).show();
+								}
+							});
 				}
 			}
 		}
@@ -961,7 +985,6 @@ public class MainActivity extends TabActivity implements
 		if (message.getUrl() != null) {
 			final String url = message.getUrl();
 			msgTitleView.setClickable(true);
-			msgTitleView.setTextColor(Color.BLUE);
 			msgTitleView.setOnClickListener(new View.OnClickListener() {
 
 				@Override
@@ -1005,16 +1028,48 @@ public class MainActivity extends TabActivity implements
 					});
 		} else {
 			// 文本消息
-			TextView msgBodyView = (TextView) listItemView
+			final TextView msgBodyView = (TextView) listItemView
 					.findViewById(R.id.msgBody);
 			msgBodyView.setText(message.getBody());
 			msgBodyView.setOnLongClickListener(new View.OnLongClickListener() {
 
 				@Override
-				public boolean onLongClick(View v) {
-					// 长按: 隐藏
+				public boolean onLongClick(View v) { // 长按: 隐藏
 					removeMessageFromList(message, listItemView);
 					return false;
+				}
+			});
+			//
+			ViewTreeObserver vto = msgBodyView.getViewTreeObserver();
+			vto.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+				@Override
+				public void onGlobalLayout() {
+					Layout layout = msgBodyView.getLayout();
+					if (layout.getEllipsisCount(layout.getLineCount() - 1) > 0) {
+						msgBodyView
+								.setOnClickListener(new View.OnClickListener() {
+
+									@Override
+									public void onClick(View v) {
+										Message msg = new Message();
+										msg.what = MESSAGE_EXPAND_MSGBODY;
+										msg.arg1 = message.getMessageId();
+										msgHandler.sendMessage(msg);
+									}
+								});
+					} else if (layout.getLineCount() > 2) {
+						msgBodyView
+								.setOnClickListener(new View.OnClickListener() {
+
+									@Override
+									public void onClick(View v) {
+										Message msg = new Message();
+										msg.what = MESSAGE_SHRINK_MSGBODY;
+										msg.arg1 = message.getMessageId();
+										msgHandler.sendMessage(msg);
+									}
+								});
+					}
 				}
 			});
 		}
@@ -1038,7 +1093,7 @@ public class MainActivity extends TabActivity implements
 				public void onClick(View view) {
 					listItemView.setBackgroundColor(MainActivity.this
 							.getResources().getColor(
-									R.color.message_list_item_selected));
+									R.color.message_list_item_selected_color));
 					showMsgActionMenu(message, listItemView);
 				}
 			});
@@ -1085,7 +1140,7 @@ public class MainActivity extends TabActivity implements
 			public void onDismiss() {
 				listItemView.setBackgroundColor(MainActivity.this
 						.getResources().getColor(
-								R.color.message_list_item_unselected));
+								R.color.message_list_item_unselected_color));
 				popupWindow = null;
 			}
 		});

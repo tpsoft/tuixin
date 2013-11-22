@@ -4,18 +4,7 @@
 
 	<color name="text_tab_selected">#000</color>
 	<color name="text_tab_unselected">#000</color>
-    
-    <color name="message_background">#fff</color>
-    <color name="message_color_1">#3c2714</color>
-    <color name="message_color_2">#68482c</color>
-    <color name="message_url">#c8c8c8</color>
-
-    <color name="msg_time">#c8c8c8</color>
-    <color name="message_list_sep_line">#c8c8c8</color>
-    
-    <color name="message_list_item_selected">#939ba2</color>
-    <color name="message_list_item_unselected">#fff</color>
-    
+        
     <color name="public_accounts_background">#fff</color>
     <color name="public_accounts_list_item_unselected">#fff</color>
     <color name="public_account_type">#c8c8c8</color>
