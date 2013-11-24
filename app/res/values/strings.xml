@@ -3,81 +3,20 @@
 
     <string name="app_name">推信</string>
     <string name="app_exit">长按返回键可退出程序……</string>
+    
     <string name="receiver_starting">启动消息收发器……</string>
     <string name="receiver_stopping">停止消息收发器……</string>
     <string name="receiver_started">消息收发器已启动</string>
     <string name="receiver_stopped">消息收发器已停止</string>
     
-    <string name="tab_home">推信</string>
-    <string name="tab_contacts">通讯录</string>
-    <string name="tab_myself">我</string>
-    
-    <string name="user_settings">设置</string>
-    <string name="menu_start_transceiver">启动收发器</string>
-    <string name="menu_stop_transceiver">停止收发器</string>
-    <string name="menu_public_accounts">公众号</string>
-    <string name="menu_settings">设置</string>
-    
     <string name="service_started">服务已启动</string>
     <string name="service_stopped">服务已停止</string>
     
-    <string name="settings_upload">文件上传</string>
-    <string name="upload_server">服务器</string>
-    <string name="upload_port">端口</string>
-    <string name="settings_message">消息</string>
-    <string name="popup_msg">弹出消息</string>
-    <string name="play_sound">声音提醒</string>
-    
-    <string name="upload_server_summary">上传图片等文件的服务器的域名或IP地址</string>
-    <string name="upload_port_summary">用4至5位数字表示的端口号</string>
-    <string name="popup_msg_summary">收到新消息时，弹出窗口显示</string>
-    <string name="play_sound_summary">收到新消息时，发出声音提醒</string>
-    
-    <string name="msg_received">接收到一条新消息</string>
-    <string name="msg_index"></string>
-    <string name="msg_sender">消息发送者</string>
-    <string name="msg_title">消息标题</string>
-    <string name="msg_notitle">无标题</string>
-    <string name="msg_body">消息正文</string>
-    <string name="msg_attachment">消息附件</string>
-    <string name="msg_time">消息时间</string>
-    <string name="msg_first">已经是第一条消息了</string>
-    <string name="msg_last">已经是最后一条消息了</string>
-    <string name="close_button">关闭</string>
-
     <item name="app_notification_id" type="id"/>
-
     <string name="ticker_text">正在启动推信……</string>
     <string name="notification_title">推信</string>
     <string name="notification_message">推信正在后台运行</string>
-    <string name="msg_receiver">接收者(长按可选择联系人)</string>
-    <string name="msg_receivers">最近联系人</string>
-    <string name="msg_content">消息内容</string>
-    <string name="msg_photo">消息图片</string>
-    <string name="msg_send">发送消息</string>
-    <string name="msg_actions">我想</string>
-    <string name="msg_reply">回复</string>
-    <string name="msg_sendagain">再次发送</string>
-    <string name="msg_forward">转发</string>
-    <string name="msg_favorite">收藏</string>
-    <string name="no_receivers">没有最近联系人</string>
-    <string name="error_noreceiver">接收者不能为空</string>
-    <string name="error_nocontent">消息内容不能为空</string>
-    <string name="public_accounts_settings">公众号</string>
-    <string name="public_accounts_loading">正在加载&#8230;</string>
-    <string name="public_account_avatar">公众号图标</string>
-    <string name="public_account_name">公众号名称</string>
-    <string name="public_account_type">公众号类型</string>
-    <string name="public_account_desc">公众号说明</string>
-    <string name="take_photo">拍照</string>
-    <string name="pick_photo">从相册中选择</string>
-    <string name="photoPickerNotFound">找不到照片拾取程序</string>
-    <string name="noSDCard">没有SD卡</string>
-    <string name="photo_save_failed">照片保存失败</string>
-    <string name="photo_uploading">正在上传照片&#8230;</string>
-    <string name="photo_upload_failed">照片上传失败</string>
-    <string name="title_activity_splash_screen">SplashScreen</string>
-    <string name="action_settings">Settings</string>
-    <string name="hello_world">Hello world!</string>
 
+    <string name="me">我</string>
+    
 </resources>

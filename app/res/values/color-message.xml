@@ -1,15 +1,14 @@
 <resources>
 
-    <color name="message_background">#fff</color>
+    <color name="message_background_color">#fff</color>
     <color name="message_index_color">#382d24</color>
+    <color name="message_sender_color">#003300</color>
     <color name="message_time_color">#c8c8c8</color>
-    <color name="message_title_color">#000000</color>
-    <color name="message_body_color">#778899</color>
-    <color name="message_title_clickable_color">#87cefa</color>
+    <color name="message_title_color">#666666</color>
+    <color name="message_body_color">#000000</color>
     
     <color name="message_list_sep_line">#c8c8c8</color>
 
     <color name="message_list_item_selected_color">#939ba2</color>
-    <color name="message_list_item_unselected_color">#fff</color>
     
 </resources>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="tab_home">推信</string>
+    <string name="tab_contacts">联系人</string>
+    <string name="tab_myself">我</string>
+    
+</resources>

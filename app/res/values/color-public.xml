@@ -1,0 +1,9 @@
+<resources>
+
+    <color name="public_accounts_background">#fff</color>
+    <color name="public_accounts_list_item_unselected">#fff</color>
+    <color name="public_account_name">#003300</color>
+    <color name="public_account_type">#c8c8c8</color>
+    <color name="public_account_desc">#000000</color>
+
+</resources>

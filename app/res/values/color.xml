@@ -5,7 +5,4 @@
 	<color name="text_tab_selected">#000</color>
 	<color name="text_tab_unselected">#000</color>
         
-    <color name="public_accounts_background">#fff</color>
-    <color name="public_accounts_list_item_unselected">#fff</color>
-    <color name="public_account_type">#c8c8c8</color>
 </resources>

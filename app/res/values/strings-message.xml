@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="msg_received">接收到一条新消息</string>
+    <string name="msg_index"></string>
+    <string name="msg_sender">消息发送者</string>
+    <string name="msg_title">消息标题</string>
+    <string name="msg_body">消息正文</string>
+    <string name="msg_attachment">消息附件</string>
+    <string name="msg_time">消息时间</string>
+    <string name="msg_first">已经是第一条消息了</string>
+    <string name="msg_last">已经是最后一条消息了</string>
+
+
+    <string name="msg_receiver">接收者(长按可选择联系人)</string>
+    <string name="msg_receivers">最近联系人</string>
+    <string name="msg_content">消息内容</string>
+    <string name="msg_photo">消息图片</string>
+    <string name="msg_send">发送消息</string>
+
+    <string name="msg_link">消息链接</string>
+    <string name="msg_actions">消息处理</string>
+    <string name="msg_reply">回复</string>
+    <string name="msg_sendagain">再次发送</string>
+    <string name="msg_forward">转发</string>
+    <string name="msg_favorite">收藏</string>
+    <string name="no_receivers">没有最近联系人</string>
+    <string name="error_noreceiver">接收者不能为空</string>
+    <string name="error_nocontent">消息内容不能为空</string>
+
+    <string name="take_photo">拍照</string>
+    <string name="pick_photo">从相册中选择</string>
+    <string name="photoPickerNotFound">找不到照片拾取程序</string>
+    <string name="noSDCard">没有SD卡</string>
+    <string name="photo_save_failed">照片保存失败</string>
+    <string name="photo_uploading">正在上传照片&#8230;</string>
+    <string name="photo_upload_failed">照片上传失败</string>
+    
+</resources>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="menu_start_transceiver">启动收发器</string>
+    <string name="menu_stop_transceiver">停止收发器</string>
+    <string name="menu_public_accounts">公众号</string>
+    <string name="menu_settings">设置</string>
+    
+</resources>

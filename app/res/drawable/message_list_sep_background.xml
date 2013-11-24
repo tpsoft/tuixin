@@ -6,6 +6,8 @@
 
     <stroke
         android:width="1dip"
+        android:dashWidth="1sp"
+        android:dashGap="2sp"
         android:color="@color/message_list_sep_line" />
 
 </shape>

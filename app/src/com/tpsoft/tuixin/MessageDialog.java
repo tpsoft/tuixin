@@ -82,7 +82,7 @@ public class MessageDialog extends Activity implements OnTouchListener,
 						msgIndex.setOnTouchListener(MessageDialog.this);
 						//
 						ImageView msgSender = (ImageView) notifyView
-								.findViewById(R.id.msgSender);
+								.findViewById(R.id.msgSenderIcon);
 						msgSender.setOnTouchListener(MessageDialog.this);
 						//
 						TextView msgTitle = (TextView) notifyView
@@ -351,23 +351,23 @@ public class MessageDialog extends Activity implements OnTouchListener,
 			return;
 
 		// 发送者
-		final ImageView msgSender = (ImageView) notifyView
-				.findViewById(R.id.msgSender);
+		final ImageView msgSenderIcon = (ImageView) notifyView
+				.findViewById(R.id.msgSenderIcon);
 		final Bitmap senderIcon;
 		if (msgBundle.getBoolean("showIcon")) {
 			senderIcon = MyApplicationClass.loadImage(msgBundle
 					.getString("iconUrl"));
 			boolean favorite = msgBundle.getBoolean("favorite", false);
-			showSenderIcon(msgSender, senderIcon, favorite);
+			showSenderIcon(msgSenderIcon, senderIcon, favorite);
 			//
-			msgSender.setOnClickListener(new View.OnClickListener() {
+			msgSenderIcon.setOnClickListener(new View.OnClickListener() {
 
 				@Override
 				public void onClick(View view) {
 					// 收藏/取消收藏
 					int id = msgBundle.getInt("id");
 					boolean favorite = msgBundle.getBoolean("favorite", false);
-					showSenderIcon(msgSender, senderIcon, !favorite);
+					showSenderIcon(msgSenderIcon, senderIcon, !favorite);
 					//
 					Intent i = new Intent();
 					i.setAction(MainActivity.MESSAGE_DIALOG_CLASSNAME);
@@ -380,54 +380,58 @@ public class MessageDialog extends Activity implements OnTouchListener,
 			});
 		} else {
 			senderIcon = null;
-			msgSender.setImageBitmap(null);
+			msgSenderIcon.setImageBitmap(null);
 		}
+		TextView msgSenderName = (TextView) notifyView
+				.findViewById(R.id.msgSenderName);
+		if (msgBundle.getString("sender").equals("me")) {
+			msgSenderName.setText(R.string.me);
+		} else {
+			msgSenderName.setText(msgBundle.getString("sender"));
+		}
+		msgSenderName.setClickable(true);
+		msgSenderName.setOnClickListener(new View.OnClickListener() {
+
+			@Override
+			public void onClick(View view) {
+				final EditText editor = new EditText(MessageDialog.this);
+				new AlertDialog.Builder(MessageDialog.this)
+						.setTitle("回复" + msgBundle.getString("sender") + ":")
+						.setIcon(R.drawable.reply_message)
+						.setView(editor)
+						.setPositiveButton("确定",
+								new DialogInterface.OnClickListener() {
+
+									@Override
+									public void onClick(DialogInterface dialog,
+											int which) {
+										String msgText = editor.getText()
+												.toString();
+										Intent i = new Intent();
+										i.setAction(MainActivity.MESSAGE_DIALOG_CLASSNAME);
+										i.putExtra("action", "sendMessage");
+										i.putExtra("receiver",
+												msgBundle.getString("sender"));
+										i.putExtra(
+												"title",
+												"回复"
+														+ msgBundle
+																.getString("sender")
+														+ ":");
+										i.putExtra("body", msgText);
+										i.putExtra("record", true);
+										sendBroadcast(i);
+									}
+								}).setNegativeButton("取消", null).show();
+			}
+		});
 		// 消息标题
 		TextView msgTitle = (TextView) notifyView.findViewById(R.id.msgTitle);
-		if (msgBundle.containsKey("title"))
+		if (msgBundle.containsKey("title")) {
+			msgTitle.setVisibility(View.VISIBLE);
 			msgTitle.setText(msgBundle.getString("title"));
-		else if (msgBundle.containsKey("sender")) {
-			msgTitle.setText("自 " + msgBundle.getString("sender") + ": ");
-			msgTitle.setClickable(true);
-			msgTitle.setOnClickListener(new View.OnClickListener() {
-
-				@Override
-				public void onClick(View view) {
-					final EditText editor = new EditText(MessageDialog.this);
-					new AlertDialog.Builder(MessageDialog.this)
-							.setTitle(
-									"回复" + msgBundle.getString("sender") + ":")
-							.setIcon(R.drawable.reply_message)
-							.setView(editor)
-							.setPositiveButton("确定",
-									new DialogInterface.OnClickListener() {
-
-										@Override
-										public void onClick(
-												DialogInterface dialog,
-												int which) {
-											String msgText = editor.getText()
-													.toString();
-											Intent i = new Intent();
-											i.setAction(MainActivity.MESSAGE_DIALOG_CLASSNAME);
-											i.putExtra("action", "sendMessage");
-											i.putExtra("receiver", msgBundle
-													.getString("sender"));
-											i.putExtra(
-													"title",
-													"回复"
-															+ msgBundle
-																	.getString("sender")
-															+ ":");
-											i.putExtra("body", msgText);
-											i.putExtra("record", true);
-											sendBroadcast(i);
-										}
-									}).setNegativeButton("取消", null).show();
-				}
-			});
 		} else {
-			msgTitle.setText(R.string.msg_notitle);
+			msgTitle.setVisibility(View.GONE);
 		}
 		// 消息正文
 		if (msgBundle.containsKey("type")
@@ -435,7 +439,7 @@ public class MessageDialog extends Activity implements OnTouchListener,
 
 			TextView msgBody = (TextView) notifyView.findViewById(R.id.msgBody);
 			msgBody.setVisibility(View.VISIBLE);
-			//INVISIBLE
+			// INVISIBLE
 			WebView msgBodyHtml = (WebView) notifyView
 					.findViewById(R.id.msgBodyHtml);
 			msgBodyHtml.setVisibility(View.GONE);
@@ -470,8 +474,8 @@ public class MessageDialog extends Activity implements OnTouchListener,
 			msgBodyHtml.getSettings().setLoadsImagesAutomatically(true);
 			msgBodyHtml.addJavascriptInterface(MessageDialog.this, "android");
 			//
-			msgBodyHtml.loadDataWithBaseURL("file:///android_asset/", msgBundle.getString("body"),
-					"text/html", "UTF-8", null);
+			msgBodyHtml.loadDataWithBaseURL("file:///android_asset/",
+					msgBundle.getString("body"), "text/html", "UTF-8", null);
 			msgBodyHtml.setOnLongClickListener(new View.OnLongClickListener() {
 
 				@Override
@@ -511,8 +515,11 @@ public class MessageDialog extends Activity implements OnTouchListener,
 			canvas.drawBitmap(
 					favoriteFlag,
 					null,
-					new Rect(0, 0, senderIcon.getWidth(), senderIcon
-							.getHeight()), null);
+					new Rect(senderIcon.getWidth()
+							- MainActivity.FAVORITE_FLAG_WIDTH, senderIcon
+							.getHeight() - MainActivity.FAVORITE_FLAG_HEIGHT,
+							senderIcon.getWidth(), senderIcon.getHeight()),
+					null);
 			msgSender.setImageBitmap(bitmap);
 		} else {
 			// 未收藏

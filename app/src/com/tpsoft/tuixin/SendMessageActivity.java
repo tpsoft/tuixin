@@ -2,7 +2,6 @@ package com.tpsoft.tuixin;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -161,33 +160,6 @@ public class SendMessageActivity extends Activity {
 		}
 	}
 
-	@SuppressWarnings("unused")
-	private void doCropPhoto(File f) {
-		try {
-			// 启动gallery去剪辑这个照片
-			Intent intent = getCropImageIntent(Uri.fromFile(f));
-			startActivityForResult(intent, ImageUtils.PHOTO_PICKED_WITH_DATA);
-		} catch (Exception e) {
-			Toast.makeText(this, R.string.photoPickerNotFound,
-					Toast.LENGTH_LONG).show();
-		}
-	}
-
-	/**
-	 * Constructs an intent for image cropping. 调用图片剪辑程序
-	 */
-	private static Intent getCropImageIntent(Uri photoUri) {
-		Intent intent = new Intent("com.android.camera.action.CROP");
-		intent.setDataAndType(photoUri, "image/*");
-		intent.putExtra("crop", "true");
-		intent.putExtra("aspectX", 1);
-		intent.putExtra("aspectY", 1);
-		intent.putExtra("outputX", 80);
-		intent.putExtra("outputY", 80);
-		intent.putExtra("return-data", true);
-		return intent;
-	}
-
 	private class SendAction extends AbstractAction {
 
 		public SendAction() {
@@ -307,7 +279,7 @@ public class SendMessageActivity extends Activity {
 	private class ReturnAction extends AbstractAction {
 
 		public ReturnAction() {
-			super(R.drawable.app_logo);
+			super(R.drawable.home);
 		}
 
 		@Override

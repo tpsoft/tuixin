@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="public_accounts_settings">公众号</string>
+    <string name="public_accounts_loading">正在加载&#8230;</string>
+    <string name="public_account_avatar">公众号图标</string>
+    <string name="public_account_name">公众号名称</string>
+    <string name="public_account_type">公众号类型</string>
+    <string name="public_account_desc">公众号说明</string>
+
+</resources>

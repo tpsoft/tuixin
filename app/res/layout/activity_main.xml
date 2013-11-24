@@ -37,7 +37,7 @@
                     android:id="@+id/msgContainer"
                     android:layout_width="fill_parent"
                     android:layout_height="fill_parent"
-                    android:background="@color/message_background" >
+                    android:background="@color/message_background_color" >
 
                     <LinearLayout
                         android:id="@+id/msg"

@@ -31,7 +31,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.text.Layout;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -39,7 +38,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup.LayoutParams;
-import android.view.ViewTreeObserver;
 import android.webkit.WebView;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
@@ -66,7 +64,6 @@ import com.tpsoft.pushnotification.service.NotifyPushService;
 import com.tpsoft.tuixin.db.DBManager;
 import com.tpsoft.tuixin.model.MyMessageSupportSave;
 import com.tpsoft.tuixin.utils.HttpUtils;
-import com.tpsoft.tuixin.utils.ImageUtils;
 
 @SuppressWarnings("deprecation")
 @SuppressLint("UseSparseArrays")
@@ -77,11 +74,13 @@ public class MainActivity extends TabActivity implements
 	public static final String MESSAGE_DIALOG_CLASSNAME = "com.tpsoft.tuixin.MessageDialog";
 	public static final String MESSAGE_SEND_CLASSNAME = "com.tpsoft.tuixin.SendMessageActivity";
 
-	public static final String TAG_APILOG = "PushNotification-API";
-	public static final String TAG_MAINLOG = "MAIN";
+	public static final int FAVORITE_FLAG_WIDTH = 48;
+	public static final int FAVORITE_FLAG_HEIGHT = 48;
 
-	public static final String SENDER_ICON_TITLE = "sender-avatar";
-	public static final int ICON_CORNER_SIZE = 60;
+	private static final String TAG_APILOG = "PushNotification-API";
+	private static final String TAG_MAINLOG = "MAIN";
+
+	private static final String SENDER_ICON_TITLE = "sender-avatar";
 
 	private static final SimpleDateFormat sdf = new SimpleDateFormat("MM月dd日",
 			Locale.CHINESE);
@@ -92,8 +91,6 @@ public class MainActivity extends TabActivity implements
 	private static final int MESSAGE_START_RECEIVER = 1;
 	private static final int MESSAGE_SHOW_NOTIFICATION = 2;
 	private static final int MESSAGE_UPDATE_TIME = 3;
-	private static final int MESSAGE_EXPAND_MSGBODY = 4;
-	private static final int MESSAGE_SHRINK_MSGBODY = 5;
 
 	private class MyBroadcastReceiver extends BroadcastReceiver {
 
@@ -113,7 +110,7 @@ public class MainActivity extends TabActivity implements
 					if (id != -1 && messages.containsKey(id)) {
 						MyMessageSupportSave message = messages.get(id);
 						ImageView msgSenderView = (ImageView) msgListItemViews
-								.get(id).findViewById(R.id.msgSender);
+								.get(id).findViewById(R.id.msgSenderIcon);
 						//
 						Bitmap senderIcon = msgSenderIcons.get(id);
 						if (favorite) {
@@ -123,9 +120,15 @@ public class MainActivity extends TabActivity implements
 							Bitmap bitmap = Bitmap.createBitmap(senderIcon
 									.copy(Config.ARGB_8888, true));
 							Canvas canvas = new Canvas(bitmap);
-							canvas.drawBitmap(favoriteFlag, null,
-									new Rect(0, 0, senderIcon.getWidth(),
-											senderIcon.getHeight()), null);
+							canvas.drawBitmap(
+									favoriteFlag,
+									null,
+									new Rect(senderIcon.getWidth()
+											- FAVORITE_FLAG_WIDTH,
+											senderIcon.getHeight()
+													- FAVORITE_FLAG_HEIGHT,
+											senderIcon.getWidth(), senderIcon
+													.getHeight()), null);
 							msgSenderView.setImageBitmap(bitmap);
 						} else {
 							long recordId = message.getRecordId();
@@ -301,25 +304,6 @@ public class MainActivity extends TabActivity implements
 						mActivity.get().msgCount--; // 计数器不变
 					}
 				}
-				break;
-			case MESSAGE_EXPAND_MSGBODY:
-				// 扩展消息体部
-				int msgId = msg.arg1;
-				View listItemView = mActivity.get().msgListItemViews.get(msgId);
-				TextView msgBodyView = (TextView) listItemView
-						.findViewById(R.id.msgBody);
-				msgBodyView.setLines(Integer.MAX_VALUE);
-				msgBodyView.setMinLines(0);
-				msgBodyView.refreshDrawableState();
-				break;
-			case MESSAGE_SHRINK_MSGBODY:
-				// 收缩消息体部
-				msgId = msg.arg1;
-				listItemView = mActivity.get().msgListItemViews.get(msgId);
-				msgBodyView = (TextView) listItemView
-						.findViewById(R.id.msgBody);
-				msgBodyView.setMaxLines(2);
-				msgBodyView.refreshDrawableState();
 				break;
 			default:
 				super.handleMessage(msg);
@@ -711,7 +695,7 @@ public class MainActivity extends TabActivity implements
 				msg.addView(makeMessageSepView());
 			}
 			msg.addView(makeMessageView(now, message, senderIcon,
-					msgAttachment, message.getSender().equals("me")));
+					msgAttachment, false));
 			msgCount++;
 		}
 	}
@@ -798,9 +782,7 @@ public class MainActivity extends TabActivity implements
 								.getInputStreamFromURL(iconUrl);
 						Bitmap image = null;
 						if (imageStream != null) {
-							image = ImageUtils.roundCorners(
-									BitmapFactory.decodeStream(imageStream),
-									ICON_CORNER_SIZE);
+							image = BitmapFactory.decodeStream(imageStream);
 							MyApplicationClass.saveImage(iconUrl, image);
 							try {
 								imageStream.close();
@@ -916,8 +898,8 @@ public class MainActivity extends TabActivity implements
 		LayoutInflater inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
 		final View listItemView = inflater.inflate(R.layout.message_list_item,
 				null);
-		final ImageView msgSenderView = (ImageView) listItemView
-				.findViewById(R.id.msgSender);
+		final ImageView msgSenderIconView = (ImageView) listItemView
+				.findViewById(R.id.msgSenderIcon);
 		ImageView msgStatusView = (ImageView) listItemView
 				.findViewById(R.id.msgStatus);
 		//
@@ -925,7 +907,7 @@ public class MainActivity extends TabActivity implements
 		msgSenderIcons.put(message.getMessageId(), senderIcon);
 		msgListItemViews.put(message.getMessageId(), listItemView);
 		//
-		msgSenderView.setOnClickListener(new View.OnClickListener() {
+		msgSenderIconView.setOnClickListener(new View.OnClickListener() {
 
 			@Override
 			public void onClick(View view) {
@@ -937,17 +919,22 @@ public class MainActivity extends TabActivity implements
 					Bitmap bitmap = Bitmap.createBitmap(senderIcon.copy(
 							Config.ARGB_8888, true));
 					Canvas canvas = new Canvas(bitmap);
-					canvas.drawBitmap(favoriteFlag, null, new Rect(0, 0,
-							senderIcon.getWidth(), senderIcon.getHeight()),
-							null);
-					msgSenderView.setImageBitmap(bitmap);
+					canvas.drawBitmap(
+							favoriteFlag,
+							null,
+							new Rect(senderIcon.getWidth()
+									- FAVORITE_FLAG_WIDTH, senderIcon
+									.getHeight() - FAVORITE_FLAG_HEIGHT,
+									senderIcon.getWidth(), senderIcon
+											.getHeight()), null);
+					msgSenderIconView.setImageBitmap(bitmap);
 				} else {
 					// 取消收藏
 					long recordId = message.getRecordId();
 					db.deleteMessage(recordId);
 					message.setRecordId(null);
 					//
-					msgSenderView.setImageBitmap(senderIcon);
+					msgSenderIconView.setImageBitmap(senderIcon);
 				}
 			}
 		});
@@ -958,34 +945,42 @@ public class MainActivity extends TabActivity implements
 			bitmap = Bitmap.createBitmap(senderIcon
 					.copy(Config.ARGB_8888, true));
 			Canvas canvas = new Canvas(bitmap);
-			canvas.drawBitmap(
-					favoriteFlag,
-					null,
-					new Rect(0, 0, senderIcon.getWidth(), senderIcon
-							.getHeight()), null);
+			canvas.drawBitmap(favoriteFlag, null,
+					new Rect(senderIcon.getWidth() - FAVORITE_FLAG_WIDTH,
+							senderIcon.getHeight() - FAVORITE_FLAG_HEIGHT,
+							senderIcon.getWidth(), senderIcon.getHeight()),
+					null);
 		}
 
-		msgSenderView.setImageBitmap(bitmap);
+		msgSenderIconView.setImageBitmap(bitmap);
 		//
 		if (send) {
 			msgStatusView.setVisibility(View.VISIBLE);
 		}
 		//
+		TextView msgSenderNameView = (TextView) listItemView
+				.findViewById(R.id.msgSenderName);
+		if (message.getSender().equals("me"))
+			msgSenderNameView.setText(R.string.me);
+		else
+			msgSenderNameView.setText(message.getSender());
+		//
 		TextView msgTitleView = (TextView) listItemView
 				.findViewById(R.id.msgTitle);
-		if (message.getTitle() != null)
+		if (message.getTitle() != null) {
+			msgTitleView.setVisibility(View.VISIBLE);
 			msgTitleView.setText(message.getTitle());
-		else if (message.getSender() != null) {
-			if (message.getSender().equals("me"))
-				msgTitleView.setText("致 " + message.getReceiver() + ": ");
-			else
-				msgTitleView.setText("自 " + message.getSender() + ": ");
-		} else
-			msgTitleView.setText(R.string.msg_notitle);
+		} else if (message.getSender().equals("me")) {
+			msgTitleView.setVisibility(View.VISIBLE);
+			msgTitleView.setText("对 " + message.getReceiver() + " 说:");
+		}
+
 		if (message.getUrl() != null) {
 			final String url = message.getUrl();
-			msgTitleView.setClickable(true);
-			msgTitleView.setOnClickListener(new View.OnClickListener() {
+			ImageView msgLinkView = (ImageView) listItemView
+					.findViewById(R.id.msgLink);
+			msgLinkView.setVisibility(View.VISIBLE);
+			msgLinkView.setOnClickListener(new View.OnClickListener() {
 
 				@Override
 				public void onClick(View view) {
@@ -999,6 +994,7 @@ public class MainActivity extends TabActivity implements
 				}
 			});
 		}
+
 		//
 		if ("html".equals(message.getType())) {
 			// HTML消息
@@ -1039,37 +1035,21 @@ public class MainActivity extends TabActivity implements
 					return false;
 				}
 			});
-			//
-			ViewTreeObserver vto = msgBodyView.getViewTreeObserver();
-			vto.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+		}
+		//
+		if (!MyApplicationClass.receiveOnly) {
+			ImageView msgActionsView = (ImageView) listItemView
+					.findViewById(R.id.msgActions);
+			msgActionsView.setVisibility(View.VISIBLE);
+			msgActionsView.setClickable(true);
+			msgActionsView.setOnClickListener(new View.OnClickListener() {
+
 				@Override
-				public void onGlobalLayout() {
-					Layout layout = msgBodyView.getLayout();
-					if (layout.getEllipsisCount(layout.getLineCount() - 1) > 0) {
-						msgBodyView
-								.setOnClickListener(new View.OnClickListener() {
-
-									@Override
-									public void onClick(View v) {
-										Message msg = new Message();
-										msg.what = MESSAGE_EXPAND_MSGBODY;
-										msg.arg1 = message.getMessageId();
-										msgHandler.sendMessage(msg);
-									}
-								});
-					} else if (layout.getLineCount() > 2) {
-						msgBodyView
-								.setOnClickListener(new View.OnClickListener() {
-
-									@Override
-									public void onClick(View v) {
-										Message msg = new Message();
-										msg.what = MESSAGE_SHRINK_MSGBODY;
-										msg.arg1 = message.getMessageId();
-										msgHandler.sendMessage(msg);
-									}
-								});
-					}
+				public void onClick(View view) {
+					listItemView.setBackgroundColor(MainActivity.this
+							.getResources().getColor(
+									R.color.message_list_item_selected_color));
+					showMsgActionMenu(message, listItemView);
 				}
 			});
 		}
@@ -1082,22 +1062,6 @@ public class MainActivity extends TabActivity implements
 				.findViewById(R.id.msgTime);
 		msgTimeView.setText(makeTimeString(now, message.getGenerateTime()));
 		//
-		ImageView msgActions = (ImageView) listItemView
-				.findViewById(R.id.msgActions);
-		if (MyApplicationClass.receiveOnly) {
-			msgActions.setVisibility(View.INVISIBLE);
-		} else {
-			msgActions.setOnClickListener(new View.OnClickListener() {
-
-				@Override
-				public void onClick(View view) {
-					listItemView.setBackgroundColor(MainActivity.this
-							.getResources().getColor(
-									R.color.message_list_item_selected_color));
-					showMsgActionMenu(message, listItemView);
-				}
-			});
-		}
 		return listItemView;
 	}
 
@@ -1140,14 +1104,12 @@ public class MainActivity extends TabActivity implements
 			public void onDismiss() {
 				listItemView.setBackgroundColor(MainActivity.this
 						.getResources().getColor(
-								R.color.message_list_item_unselected_color));
+								R.color.message_background_color));
 				popupWindow = null;
 			}
 		});
-		// showAsDropDown会把里面的view作为参照物，所以要那满屏幕parent
-		// popupWindow.showAsDropDown(findViewById(R.id.tv_title), x, 10);
-		popupWindow.showAsDropDown(listItemView.findViewById(R.id.msgTitle));
-
+		popupWindow.showAsDropDown(listItemView
+				.findViewById(R.id.msgSenderName));
 		listView.setOnItemClickListener(new OnItemClickListener() {
 
 			@Override
@@ -1201,8 +1163,10 @@ public class MainActivity extends TabActivity implements
 	private String makeTimeString(Date now, Date time) {
 		String str;
 		long diffInSeconds = (now.getTime() - time.getTime()) / 1000;
-		if (diffInSeconds < 60) {
+		if (diffInSeconds < 1) {
 			str = "刚刚";
+		} else if (diffInSeconds < 60) {
+			str = (diffInSeconds) + "秒钟前";
 		} else if (diffInSeconds < 60 * 60) {
 			str = (diffInSeconds / 60) + "分钟前";
 		} else if (diffInSeconds < 60 * 60 * 24) {

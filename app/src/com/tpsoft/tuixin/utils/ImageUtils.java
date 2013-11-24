@@ -160,10 +160,10 @@ public class ImageUtils {
 		Intent intent = new Intent(Intent.ACTION_GET_CONTENT, null);
 		intent.setType("image/*");
 		intent.putExtra("crop", "true");
-		intent.putExtra("aspectX", 1);
-		intent.putExtra("aspectY", 1);
-		intent.putExtra("outputX", 80);
-		intent.putExtra("outputY", 80);
+		//intent.putExtra("aspectX", 1);
+		//intent.putExtra("aspectY", 1);
+		//intent.putExtra("outputX", 200);
+		//intent.putExtra("outputY", 200);
 		intent.putExtra("return-data", true);
 		return intent;
 	}

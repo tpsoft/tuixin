@@ -1,5 +1,7 @@
 package com.tpsoft.tuixin;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -14,6 +16,7 @@ import android.graphics.Bitmap.Config;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Rect;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -27,6 +30,7 @@ import com.tpsoft.pushnotification.client.MessageTransceiverListener;
 import com.tpsoft.pushnotification.client.PushNotificationClient;
 import com.tpsoft.pushnotification.model.MyMessage;
 import com.tpsoft.pushnotification.model.PublicAccount;
+import com.tpsoft.tuixin.utils.HttpUtils;
 
 public class PublicAccountsActivity extends Activity implements
 		MessageTransceiverListener {
@@ -43,6 +47,65 @@ public class PublicAccountsActivity extends Activity implements
 	private Map<String, View> listItemViews = new HashMap<String, View>();
 	private Map<String, Bitmap> accountAvatars = new HashMap<String, Bitmap>();
 	private Set<String> followedAccounts = new HashSet<String>();
+
+	private class MyTask extends AsyncTask<List<PublicAccount>, Integer, Void> {
+		private List<PublicAccount> accounts;
+
+		// onPreExecute方法用于在执行后台任务前做一些UI操作
+		@Override
+		protected void onPreExecute() {
+			accountsLayout.removeAllViews(); // 删除原来的列表
+		}
+
+		// doInBackground方法内部执行后台任务,不可在此方法内修改UI
+		@Override
+		protected Void doInBackground(List<PublicAccount>... params) {
+			accounts = params[0];
+			for (int i = 0; i < accounts.size(); i++) {
+				PublicAccount account = accounts.get(i);
+				//
+				if (!MyApplicationClass.existsImage(account.getAvatar())) {
+					InputStream imageStream = HttpUtils
+							.getInputStreamFromURL(account.getAvatar());
+					Bitmap image = null;
+					if (imageStream != null) {
+						image = BitmapFactory.decodeStream(imageStream);
+						MyApplicationClass
+								.saveImage(account.getAvatar(), image);
+						try {
+							imageStream.close();
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+					}
+				}
+			}
+			return null;
+		}
+
+		@Override
+		protected void onPostExecute(Void v) {
+			for (int i = 0; i < accounts.size(); i++) {
+				PublicAccount account = accounts.get(i);
+				//
+				Bitmap accountAvatar = MyApplicationClass.loadImage(account
+						.getAvatar());
+				if (accountAvatar == null) {
+					accountAvatar = BitmapFactory.decodeResource(
+							PublicAccountsActivity.this.getResources(),
+							R.drawable.sender_avatar);
+				}
+				if (i != accounts.size() - 1) {
+					// 加消息分隔条
+					accountsLayout.addView(makeAccountSepView());
+				}
+				View listItemView = makeAccountView(account, accountAvatar);
+				accountsLayout.addView(listItemView);
+				//
+				listItemViews.put(account.getName(), listItemView);
+			}
+		}
+	}
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -74,27 +137,10 @@ public class PublicAccountsActivity extends Activity implements
 				ALL_PUBLIC_ACCOUNTS_QUERY_CONDITION);
 	}
 
+	@SuppressWarnings("unchecked")
 	private void showPublicAccounts(List<PublicAccount> accounts) {
-		accountsLayout.removeAllViews(); // 删除原来的列表
-		for (int i = 0; i < accounts.size(); i++) {
-			PublicAccount account = accounts.get(i);
-			//
-			Bitmap accountAvatar = MyApplicationClass.loadImage(account
-					.getAvatar());
-			if (accountAvatar == null) {
-				accountAvatar = BitmapFactory.decodeResource(
-						PublicAccountsActivity.this.getResources(),
-						R.drawable.sender_avatar);
-			}
-			if (i != accounts.size() - 1) {
-				// 加消息分隔条
-				accountsLayout.addView(makeAccountSepView());
-			}
-			View listItemView = makeAccountView(account, accountAvatar);
-			accountsLayout.addView(listItemView);
-			//
-			listItemViews.put(account.getName(), listItemView);
-		}
+		MyTask mTask = new MyTask();
+		mTask.execute(accounts);
 	}
 
 	@SuppressLint("ResourceAsColor")
@@ -152,11 +198,10 @@ public class PublicAccountsActivity extends Activity implements
 		Bitmap bitmap = Bitmap.createBitmap(accountAvatar.copy(
 				Config.ARGB_8888, true));
 		Canvas canvas = new Canvas(bitmap);
-		canvas.drawBitmap(
-				followFlag,
-				null,
-				new Rect(0, 0, accountAvatar.getWidth(), accountAvatar
-						.getHeight()), null);
+		canvas.drawBitmap(followFlag, null, new Rect(accountAvatar.getWidth()
+				- MainActivity.FAVORITE_FLAG_WIDTH, accountAvatar.getHeight()
+				- MainActivity.FAVORITE_FLAG_HEIGHT, accountAvatar.getWidth(),
+				accountAvatar.getHeight()), null);
 		//
 		ImageView accountAvatarView = (ImageView) listItemView
 				.findViewById(R.id.accountAvatar);
@@ -237,7 +282,7 @@ public class PublicAccountsActivity extends Activity implements
 	private class ReturnAction extends AbstractAction {
 
 		public ReturnAction() {
-			super(R.drawable.app_logo);
+			super(R.drawable.home);
 		}
 
 		@Override

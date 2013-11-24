@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="system_settings">系统设置</string>
+    <string name="settings_server">消息推送</string>
+    <string name="server_host">服务器</string>
+    <string name="server_port">端口</string>
+        
+    <string name="user_settings">用户设置</string>
+    <string name="settings_upload">文件上传</string>
+    <string name="upload_server">服务器</string>
+    <string name="upload_port">端口</string>
+    <string name="settings_message">消息</string>
+    <string name="popup_msg">弹出消息</string>
+    <string name="play_sound">声音提醒</string>
+    
+    <string name="upload_server_summary">上传图片等文件的服务器的域名或IP地址</string>
+    <string name="upload_port_summary">用4至5位数字表示的端口号</string>
+    <string name="popup_msg_summary">收到新消息时，弹出窗口显示</string>
+    <string name="play_sound_summary">收到新消息时，发出声音提醒</string>
+    
+    <string name="server_host_summary">要登录的服务器的域名或IP地址</string>
+    <string name="server_port_summary">用4至5位数字表示的端口号</string>
+    
+</resources>
