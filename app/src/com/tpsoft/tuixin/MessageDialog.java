@@ -113,9 +113,31 @@ public class MessageDialog extends Activity implements OnTouchListener,
 		// 允许手势
 		mGestureDetector = new GestureDetector(MessageDialog.this,
 				(OnGestureListener) MessageDialog.this);
+		//
 		LinearLayout msgContainer = (LinearLayout) notifyView
 				.findViewById(R.id.msgContainer);
 		msgContainer.setOnTouchListener(MessageDialog.this);
+		TextView msgIndex = (TextView) notifyView
+				.findViewById(R.id.msgIndex);
+		msgIndex.setOnTouchListener(MessageDialog.this);
+		ImageView msgSenderIcon = (ImageView) notifyView
+				.findViewById(R.id.msgSenderIcon);
+		msgSenderIcon.setOnTouchListener(MessageDialog.this);
+		TextView msgSenderName = (TextView) notifyView
+				.findViewById(R.id.msgSenderName);
+		msgSenderName.setOnTouchListener(MessageDialog.this);
+		TextView msgTitle = (TextView) notifyView
+				.findViewById(R.id.msgTitle);
+		msgTitle.setOnTouchListener(MessageDialog.this);
+		TextView msgBody = (TextView) notifyView
+				.findViewById(R.id.msgBody);
+		msgBody.setOnTouchListener(MessageDialog.this);
+		WebView msgBodyHtml = (WebView) notifyView
+				.findViewById(R.id.msgBodyHtml);
+		msgBodyHtml.setOnTouchListener(MessageDialog.this);
+		ImageView msgAttachment = (ImageView) notifyView
+				.findViewById(R.id.msgAttachment);
+		msgAttachment.setOnTouchListener(MessageDialog.this);
 
 		// 准备与后台服务通信
 		myBroadcastReceiver = new MyBroadcastReceiver();
@@ -187,7 +209,7 @@ public class MessageDialog extends Activity implements OnTouchListener,
 			if (msgBundle.getBoolean("showIcon")) {
 				senderIcon = MyApplicationClass.loadImage(msgBundle
 						.getString("iconUrl"));
-				showSenderIcon(msgSenderIcon, senderIcon, favorite);
+				showSenderIcon(msgSenderIcon, senderIcon, !favorite);
 			}
 			//
 			Intent i = new Intent();
