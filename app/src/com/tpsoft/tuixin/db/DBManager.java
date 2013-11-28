@@ -38,7 +38,7 @@ public class DBManager {
 	 * @param message
 	 * @return long
 	 */
-	public long addMessage(MyMessage message) {
+	public long addMessage(MyMessage message, boolean favorite) {
 		db.beginTransaction(); // 开始事务
 		try {
 			ContentValues cv = new ContentValues();
@@ -54,6 +54,7 @@ public class DBManager {
 			cv.put("expiration",
 					(message.getExpiration() != null ? dateFormat
 							.format(message.getExpiration()) : ""));
+			cv.put("favorite", favorite ? 1 : 0);
 			long messageId = db.insert("message", null, cv);
 			//
 			for (int i = 0; i < message.getAttachmentCount(); i++) {
@@ -71,6 +72,28 @@ public class DBManager {
 		} finally {
 			db.endTransaction(); // 结束事务
 		}
+	}
+
+	/**
+	 * favour message
+	 * 
+	 * @param id
+	 * @param favorite
+	 * @return boolean
+	 */
+	public boolean favourMessage(long id, boolean favorite) {
+		int updatedRows = 0;
+		db.beginTransaction(); // 开始事务
+		try {
+			ContentValues cv = new ContentValues();
+			cv.put("favorite", favorite ? 1 : 0);
+			updatedRows = db.update("message", cv, "_id = ?",
+					new String[] { Long.toString(id) });
+			db.setTransactionSuccessful(); // 设置事务成功完成
+		} finally {
+			db.endTransaction(); // 结束事务
+		}
+		return (updatedRows > 0);
 	}
 
 	/**
@@ -124,7 +147,10 @@ public class DBManager {
 				null));
 		while (c.moveToNext()) {
 			MyMessageSupportSave message = new MyMessageSupportSave();
-			message.setRecordId(c.getLong(c.getColumnIndex("_id"))); // record id, not msgid
+			message.setRecordId(c.getLong(c.getColumnIndex("_id"))); // record
+																		// id,
+																		// not
+																		// msgid
 			message.setSender(c.getString(c.getColumnIndex("sender")));
 			message.setReceiver(c.getString(c.getColumnIndex("receiver")));
 			message.setTitle(c.getString(c.getColumnIndex("title")));
@@ -147,6 +173,10 @@ public class DBManager {
 					e.printStackTrace();
 				}
 			}
+			if (c.getColumnIndex("favorite") == -1)
+				message.setFavorite(false);
+			else
+				message.setFavorite(c.getLong(c.getColumnIndex("favorite")) != 0);
 			messages.add(message);
 		}
 		c.close();
