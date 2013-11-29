@@ -95,6 +95,28 @@ public class DBManager {
 		}
 		return (updatedRows > 0);
 	}
+	
+	/**
+	 * hide message
+	 * 
+	 * @param id
+	 * @param hidden
+	 * @return boolean
+	 */
+	public boolean hideMessage(long id, boolean hidden) {
+		int updatedRows = 0;
+		db.beginTransaction(); // 开始事务
+		try {
+			ContentValues cv = new ContentValues();
+			cv.put("hidden", hidden ? 1 : 0);
+			updatedRows = db.update("message", cv, "_id = ?",
+					new String[] { Long.toString(id) });
+			db.setTransactionSuccessful(); // 设置事务成功完成
+		} finally {
+			db.endTransaction(); // 结束事务
+		}
+		return (updatedRows > 0);
+	}
 
 	/**
 	 * delete message
@@ -105,6 +127,8 @@ public class DBManager {
 		db.delete("attachment", "messageId = ?",
 				new String[] { Long.toString(id) });
 		db.delete("message", "_id = ?", new String[] { Long.toString(id) });
+		
+		// TOOD 清理附件
 	}
 
 	/**
@@ -121,6 +145,7 @@ public class DBManager {
 						new String[] { dateFormat.format(before) });
 			else
 				db.delete("message", null, null);
+			// TOOD 清理附件
 			db.setTransactionSuccessful(); // 设置事务成功完成
 		} finally {
 			db.endTransaction(); // 结束事务
@@ -139,10 +164,10 @@ public class DBManager {
 	public List<MyMessageSupportSave> queryMessages(Date after, int maxRecords) {
 		ArrayList<MyMessageSupportSave> messages = new ArrayList<MyMessageSupportSave>();
 		Cursor c = (after != null ? db.rawQuery(
-				"SELECT * FROM message WHERE generateTime>=? ORDER BY generateTime DESC"
+				"SELECT * FROM message WHERE (hidden is null or hidden=0) and generateTime>=? ORDER BY generateTime DESC"
 						+ (maxRecords > 0 ? " LIMIT 0," + maxRecords : ""),
 				new String[] { dateFormat.format(after) }) : db.rawQuery(
-				"SELECT * FROM message ORDER BY generateTime DESC"
+				"SELECT * FROM message WHERE (hidden is null or hidden=0) ORDER BY generateTime DESC"
 						+ (maxRecords > 0 ? " LIMIT 0," + maxRecords : ""),
 				null));
 		while (c.moveToNext()) {

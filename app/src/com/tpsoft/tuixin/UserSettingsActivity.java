@@ -18,18 +18,21 @@ public class UserSettingsActivity extends PreferenceActivity implements
 
 		EditTextPreference prefUploadServer = (EditTextPreference) findPreference("uploadServer");
 		EditTextPreference prefUploadPort = (EditTextPreference) findPreference("uploadPort");
+		EditTextPreference prefMsgReserve = (EditTextPreference) findPreference("msgReserve");
 		CheckBoxPreference prefPopupMsg = (CheckBoxPreference) findPreference("popupMsg");
 		CheckBoxPreference prefPlaySound = (CheckBoxPreference) findPreference("playSound");
 
 		// 允许显示现有值
 		prefUploadServer.setSummary(prefUploadServer.getText());
 		prefUploadPort.setSummary(prefUploadPort.getText());
+		prefMsgReserve.setSummary(prefMsgReserve.getText()+"天");
 		updateSummary(prefPopupMsg, prefPopupMsg.isChecked());
 		updateSummary(prefPlaySound, prefPlaySound.isChecked());
 
 		// 允许监听值改变事件
 		prefUploadServer.setOnPreferenceChangeListener(this);
 		prefUploadPort.setOnPreferenceChangeListener(this);
+		prefMsgReserve.setOnPreferenceChangeListener(this);
 		prefPopupMsg.setOnPreferenceChangeListener(this);
 		prefPlaySound.setOnPreferenceChangeListener(this);
 	}
@@ -44,6 +47,8 @@ public class UserSettingsActivity extends PreferenceActivity implements
 		if (preference.getKey().equals("popupMsg")
 				|| preference.getKey().equals("playSound")) {
 			preference.setSummary((Boolean) newValue ? "允许" : "禁止");
+		} else if (preference.getKey().equals("popupMsg")) {
+			preference.setSummary(newValue + "天");
 		} else {
 			preference.setSummary(newValue.toString());
 		}

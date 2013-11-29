@@ -20,6 +20,12 @@
     <PreferenceCategory
         android:key="message"
         android:title="@string/settings_message" >
+        <EditTextPreference
+            android:defaultValue="3"
+            android:key="msgReserve"
+            android:persistent="true"
+            android:summary="@string/msg_reserve_summary"
+            android:title="@string/msg_reserve" />
         <CheckBoxPreference
             android:defaultValue="true"
             android:key="popupMsg"

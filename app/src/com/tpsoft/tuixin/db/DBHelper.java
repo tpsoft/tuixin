@@ -7,7 +7,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 public class DBHelper extends SQLiteOpenHelper {
 
 	private static final String DATABASE_NAME = "tuixin.db";
-	private static final int DATABASE_VERSION = 3;
+	private static final int DATABASE_VERSION = 4;
 
 	public DBHelper(Context context) {
 		// CursorFactory设置为null,使用默认值
@@ -27,7 +27,8 @@ public class DBHelper extends SQLiteOpenHelper {
 				+ "url TEXT, " // 消息详情URL(可选)
 				+ "generateTime TEXT NOT NULL, " // 消息生成时间
 				+ "expiration TEXT, " // 是否过期(可选)
-				+ "favorite INTEGER)"); // 是否收藏(可选，非0-是、0-否)
+				+ "favorite INTEGER, " // 是否收藏(可选，非0-是、0-否)
+				+ "hidden INTEGER)"); // 是否隐藏(可选，非0-是、0-否)
 		db.execSQL("CREATE TABLE IF NOT EXISTS attachment(" // 附件表:
 				+ "_id INTEGER PRIMARY KEY AUTOINCREMENT, " // 记录ID
 				+ "title TEXT NOT NULL, " // 附件标题
@@ -58,6 +59,10 @@ public class DBHelper extends SQLiteOpenHelper {
 		if (oldVersion < 3) {
 			String sql = "ALTER TABLE message ADD favorite INTEGER";
 			db.execSQL(sql); // 是否收藏(可选，非0-是、0-否)
+		}
+		if (oldVersion < 4) {
+			String sql = "ALTER TABLE message ADD hidden INTEGER";
+			db.execSQL(sql); // 是否隐藏(可选，非0-是、0-否)
 		}
 	}
 }

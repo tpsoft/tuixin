@@ -115,7 +115,7 @@ public class LoginActivity extends Activity implements
 			public void onClick(View view) {
 				imm.hideSoftInputFromWindow(mUserIdView.getWindowToken(), 0);
 				imm.hideSoftInputFromWindow(mPasswordView.getWindowToken(), 0);
-				mLoginErrorMessageView.setVisibility(View.GONE);
+				mLoginErrorMessageView.setText("");
 				attemptLogin();
 			}
 		});
@@ -325,8 +325,7 @@ public class LoginActivity extends Activity implements
 				imm.showSoftInputFromInputMethod(
 						mPasswordView.getWindowToken(), 0);
 			} else {
-				mLoginErrorMessageView.setText(text);
-				mLoginErrorMessageView.setVisibility(View.VISIBLE);
+				mLoginErrorMessageView.setText(text);				
 			}
 		}
 	}

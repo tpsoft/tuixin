@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.lang.ref.WeakReference;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -50,7 +51,6 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.PopupWindow;
-import android.widget.ScrollView;
 import android.widget.TabHost;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -90,8 +90,7 @@ public class MainActivity extends TabActivity implements
 	private static final SimpleDateFormat sdf = new SimpleDateFormat("MM月dd日",
 			Locale.CHINESE);
 
-	private static final int LOAD_MSG_COUNT = -1; // 程序启动时自动加载的最近消息条数(-1表示所有消息)
-	private static final long LATEST_MSG_DURATION = 24 * 60 * 7; // 要保留在列表中的消息的生成时间与当前时间的最大差值(分钟，不包含已收藏的消息)
+	private static final int LOAD_MSG_COUNT = 10; // 程序启动时自动加载的最近消息条数(-1表示所有消息)
 
 	private static final int MESSAGE_START_RECEIVER = 1;
 	private static final int MESSAGE_SHOW_NOTIFICATION = 2;
@@ -147,6 +146,8 @@ public class MainActivity extends TabActivity implements
 					if (id != -1 && messages.containsKey(id)) {
 						removeMessageFromList(messages.get(id),
 								msgListItemViews.get(id));
+						if (!messages.get(id).isFavorite())
+							db.hideMessage(messages.get(id).getRecordId(), true);
 					}
 				} else if (action.equals("sendMessage")) {
 					// 发送消息(回复)
@@ -268,47 +269,17 @@ public class MainActivity extends TabActivity implements
 				}
 				break;
 			case MESSAGE_UPDATE_TIME:
-				// 更新旧消息的生成时间，同时清除已旧的未收藏消息
+				// 更新消息生成时间
 				Date now = new Date();
-				int i = 0;
-				while (i < mActivity.get().msgCount) {
+				for (int i = 0; i < mActivity.get().msgCount; i++) {
 					message = MyApplicationClass.latestMsgs.get(i);
-					long diffInMinutes = (now.getTime() - message
-							.getGenerateTime().getTime()) / (1000 * 60);
-					if (diffInMinutes <= LATEST_MSG_DURATION
-							|| message.isFavorite()) {
-						// 消息较新或已收藏
-						View listItemView = mActivity.get().msg
-								.getChildAt(i * 2);
-						TextView msgTimeView = (TextView) listItemView
-								.findViewById(R.id.msgTime);
-						String newMsgTime = mActivity.get().makeTimeString(now,
-								message.getGenerateTime());
-						if (!msgTimeView.getText().toString()
-								.equals(newMsgTime)) {
-							msgTimeView.setText(newMsgTime);
-						}
-						i++;
-					} else {
-						// 消息旧了且未收藏
-						mActivity.get().msg.removeViewAt(i * 2); // 删除消息视图
-						if (i < mActivity.get().msgCount - 1) {
-							// 不是最后一条消息:删除后面的分隔符
-							mActivity.get().msg.removeViewAt(i * 2);
-						} else if (i > 0) {
-							// 是最后一条消息但前面还有:删除前面的分隔符
-						}
-						MyApplicationClass.latestMsgs.remove(i); // 从缓存删除消息
-						//
-						long recordId = message.getRecordId();
-						mActivity.get().db.deleteMessage(recordId); // 从数据库删除消息
-						//
-						mActivity.get().messages.remove(message.getMessageId());
-						mActivity.get().msgSenderIcons.remove(message
-								.getMessageId());
-						mActivity.get().msgListItemViews.remove(message
-								.getMessageId());
-						mActivity.get().msgCount--; // 计数器不变
+					View listItemView = mActivity.get().msg.getChildAt(i * 2);
+					TextView msgTimeView = (TextView) listItemView
+							.findViewById(R.id.msgTime);
+					String newMsgTime = mActivity.get().makeTimeString(now,
+							message.getGenerateTime());
+					if (!msgTimeView.getText().toString().equals(newMsgTime)) {
+						msgTimeView.setText(newMsgTime);
 					}
 				}
 				break;
@@ -325,8 +296,8 @@ public class MainActivity extends TabActivity implements
 	private Map<Integer/* msgId */, Bitmap> msgSenderIcons = new HashMap<Integer, Bitmap>();
 	private Map<Integer/* msgId */, View> msgListItemViews = new HashMap<Integer, View>();
 
-	private ScrollView msgContainer;
 	private LinearLayout msg;
+
 	private int verticalMinDistance = 30;
 	private int minVelocity = 0;
 
@@ -372,15 +343,11 @@ public class MainActivity extends TabActivity implements
 		mNM = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 
 		// 初始化消息控件
-		msgContainer = (ScrollView) findViewById(R.id.msgContainer);
-		msgContainer.setOnTouchListener(new OnTouchListener() {
-
-			@Override
-			public boolean onTouch(View v, MotionEvent event) {
-				return false;
-			}
-		});
 		msg = (LinearLayout) findViewById(R.id.msg);
+
+		// 初始化收藏标志
+		favoriteFlag = BitmapFactory.decodeResource(
+				MainActivity.this.getResources(), R.drawable.favorite_message);
 
 		// 创建 Handler 对象
 		msgHandler = new MessageHandler(this);
@@ -417,9 +384,11 @@ public class MainActivity extends TabActivity implements
 		db = new DBManager(this);
 		MyApplicationClass.db = db;
 
-		// 初始化收藏标志
-		favoriteFlag = BitmapFactory.decodeResource(
-				MainActivity.this.getResources(), R.drawable.favorite_message);
+		// 清理旧消息
+		Calendar calNow = Calendar.getInstance();
+		calNow.add(Calendar.DAY_OF_MONTH,
+				(int) -MyApplicationClass.userSettings.getMsgReserve());
+		db.deleteOldMessages(calNow.getTime());
 
 		// 装入已有消息
 		List<MyMessageSupportSave> messages = db.queryMessages(null,
@@ -1079,6 +1048,9 @@ public class MainActivity extends TabActivity implements
 								&& Math.abs(velocityX) > minVelocity) {
 							// 删除(向右滑)
 							removeMessageFromList(message, listItemView);
+							if (!message.isFavorite()) {
+								db.hideMessage(message.getRecordId(), true);
+							}
 							return true;
 						}
 
