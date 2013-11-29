@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.lang.ref.WeakReference;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -90,8 +91,7 @@ public class MainActivity extends TabActivity implements
 	private static final SimpleDateFormat sdf = new SimpleDateFormat("MM月dd日",
 			Locale.CHINESE);
 
-	private static final int LOAD_MSG_COUNT = 20; // 程序启动时自动加载的最近消息条数
-	private static final long LATEST_MSG_DURATION = 24 * 60; // 要保留在列表中的消息的生成时间与当前时间的最大差值(分钟，不包含已收藏的消息)
+	private static final int LOAD_MSG_COUNT = 10; // 程序启动时自动加载的最近消息条数(-1表示所有消息)
 
 	private static final int MESSAGE_START_RECEIVER = 1;
 	private static final int MESSAGE_SHOW_NOTIFICATION = 2;
@@ -119,8 +119,8 @@ public class MainActivity extends TabActivity implements
 						//
 						Bitmap senderIcon = msgSenderIcons.get(id);
 						if (favorite) {
-							long recordId = db.addMessage(message);
-							message.setRecordId(recordId);
+							db.favourMessage(message.getRecordId(), true);
+							message.setFavorite(true);
 							//
 							Bitmap bitmap = Bitmap.createBitmap(senderIcon
 									.copy(Config.ARGB_8888, true));
@@ -136,9 +136,8 @@ public class MainActivity extends TabActivity implements
 													.getHeight()), null);
 							msgSenderView.setImageBitmap(bitmap);
 						} else {
-							long recordId = message.getRecordId();
-							db.deleteMessage(recordId);
-							message.setRecordId(null);
+							db.favourMessage(message.getRecordId(), false);
+							message.setFavorite(false);
 							msgSenderView.setImageBitmap(senderIcon);
 						}
 					}
@@ -148,6 +147,8 @@ public class MainActivity extends TabActivity implements
 					if (id != -1 && messages.containsKey(id)) {
 						removeMessageFromList(messages.get(id),
 								msgListItemViews.get(id));
+						if (!messages.get(id).isFavorite())
+							db.hideMessage(messages.get(id).getRecordId(), true);
 					}
 				} else if (action.equals("sendMessage")) {
 					// 发送消息(回复)
@@ -269,44 +270,17 @@ public class MainActivity extends TabActivity implements
 				}
 				break;
 			case MESSAGE_UPDATE_TIME:
-				// 更新旧消息的生成时间，同时清除已旧的未收藏消息
+				// 更新消息生成时间
 				Date now = new Date();
-				int i = 0;
-				while (i < mActivity.get().msgCount) {
+				for (int i = 0; i < mActivity.get().msgCount; i++) {
 					message = MyApplicationClass.latestMsgs.get(i);
-					long diffInMinutes = (now.getTime() - message
-							.getGenerateTime().getTime()) / (1000 * 60);
-					if (diffInMinutes <= LATEST_MSG_DURATION
-							|| message.getRecordId() != null) {
-						// 消息较新或已收藏
-						View listItemView = mActivity.get().msg
-								.getChildAt(i * 2);
-						TextView msgTimeView = (TextView) listItemView
-								.findViewById(R.id.msgTime);
-						String newMsgTime = mActivity.get().makeTimeString(now,
-								message.getGenerateTime());
-						if (!msgTimeView.getText().toString()
-								.equals(newMsgTime)) {
-							msgTimeView.setText(newMsgTime);
-						}
-						i++;
-					} else {
-						// 消息旧了且未收藏
-						mActivity.get().msg.removeViewAt(i * 2); // 删除消息视图
-						if (i < mActivity.get().msgCount - 1) {
-							// 不是最后一条消息:删除后面的分隔符
-							mActivity.get().msg.removeViewAt(i * 2);
-						} else if (i > 0) {
-							// 是最后一条消息但前面还有:删除前面的分隔符
-						}
-						MyApplicationClass.latestMsgs.remove(i); // 删除消息
-						//
-						mActivity.get().messages.remove(message.getMessageId());
-						mActivity.get().msgSenderIcons.remove(message
-								.getMessageId());
-						mActivity.get().msgListItemViews.remove(message
-								.getMessageId());
-						mActivity.get().msgCount--; // 计数器不变
+					View listItemView = mActivity.get().msg.getChildAt(i * 2);
+					TextView msgTimeView = (TextView) listItemView
+							.findViewById(R.id.msgTime);
+					String newMsgTime = mActivity.get().makeTimeString(now,
+							message.getGenerateTime());
+					if (!msgTimeView.getText().toString().equals(newMsgTime)) {
+						msgTimeView.setText(newMsgTime);
 					}
 				}
 				break;
@@ -325,6 +299,9 @@ public class MainActivity extends TabActivity implements
 
 	private ScrollView msgContainer;
 	private LinearLayout msg;
+
+	private int verticalMinDistance = 30;
+	private int minVelocity = 0;
 
 	private NotificationManager mNM;
 	private MyBroadcastReceiver myBroadcastReceiver = null;
@@ -379,6 +356,10 @@ public class MainActivity extends TabActivity implements
 		});
 		msg = (LinearLayout) findViewById(R.id.msg);
 
+		// 初始化收藏标志
+		favoriteFlag = BitmapFactory.decodeResource(
+				MainActivity.this.getResources(), R.drawable.favorite_message);
+
 		// 创建 Handler 对象
 		msgHandler = new MessageHandler(this);
 
@@ -414,9 +395,11 @@ public class MainActivity extends TabActivity implements
 		db = new DBManager(this);
 		MyApplicationClass.db = db;
 
-		// 初始化收藏标志
-		favoriteFlag = BitmapFactory.decodeResource(
-				MainActivity.this.getResources(), R.drawable.favorite_message);
+		// 清理旧消息
+		Calendar calNow = Calendar.getInstance();
+		calNow.add(Calendar.DAY_OF_MONTH,
+				(int) -MyApplicationClass.userSettings.getMsgReserve());
+		db.deleteOldMessages(calNow.getTime());
 
 		// 装入已有消息
 		List<MyMessageSupportSave> messages = db.queryMessages(null,
@@ -892,6 +875,8 @@ public class MainActivity extends TabActivity implements
 		msgCount++;
 
 		// 保存消息
+		long recordId = db.addMessage(message, false);
+		message.setRecordId(recordId);
 		MyApplicationClass.latestMsgs.add(0, message);
 
 		// 更新旧消息的生成时间
@@ -972,47 +957,22 @@ public class MainActivity extends TabActivity implements
 
 		final ImageView msgSenderIconView = (ImageView) listItemView
 				.findViewById(R.id.msgSenderIcon);
+		msgSenderIconView.setOnTouchListener(new OnTouchListener() {
+
+			@Override
+			public boolean onTouch(View v, MotionEvent event) {
+				return false;
+			}
+		});
 		ImageView msgStatusView = (ImageView) listItemView
 				.findViewById(R.id.msgStatus);
 		//
 		messages.put(message.getMessageId(), message);
 		msgSenderIcons.put(message.getMessageId(), senderIcon);
 		msgListItemViews.put(message.getMessageId(), listItemView);
-		//
-		msgSenderIconView.setOnClickListener(new View.OnClickListener() {
-
-			@Override
-			public void onClick(View view) {
-				if (message.getRecordId() == null) {
-					// 收藏
-					long recordId = db.addMessage(message);
-					message.setRecordId(recordId);
-					//
-					Bitmap bitmap = Bitmap.createBitmap(senderIcon.copy(
-							Config.ARGB_8888, true));
-					Canvas canvas = new Canvas(bitmap);
-					canvas.drawBitmap(
-							favoriteFlag,
-							null,
-							new Rect(senderIcon.getWidth()
-									- FAVORITE_FLAG_WIDTH, senderIcon
-									.getHeight() - FAVORITE_FLAG_HEIGHT,
-									senderIcon.getWidth(), senderIcon
-											.getHeight()), null);
-					msgSenderIconView.setImageBitmap(bitmap);
-				} else {
-					// 取消收藏
-					long recordId = message.getRecordId();
-					db.deleteMessage(recordId);
-					message.setRecordId(null);
-					//
-					msgSenderIconView.setImageBitmap(senderIcon);
-				}
-			}
-		});
 		// 给发送者图标绘制收藏标志
 		Bitmap bitmap = senderIcon;
-		if (message.getRecordId() != null) {
+		if (message.isFavorite()) {
 			// 已经收藏
 			bitmap = Bitmap.createBitmap(senderIcon
 					.copy(Config.ARGB_8888, true));
@@ -1067,15 +1027,15 @@ public class MainActivity extends TabActivity implements
 			});
 		}
 
+		TextView msgBodyView = (TextView) listItemView
+				.findViewById(R.id.msgBody);
+		WebView msgBodyHtmlView = (WebView) listItemView
+				.findViewById(R.id.msgBodyHtml);
 		//
 		if ("html".equals(message.getType())) {
 			// HTML消息
-			TextView msgBodyView = (TextView) listItemView
-					.findViewById(R.id.msgBody);
 			msgBodyView.setVisibility(View.GONE);
 			//
-			WebView msgBodyHtmlView = (WebView) listItemView
-					.findViewById(R.id.msgBodyHtml);
 			msgBodyHtmlView.setVisibility(View.VISIBLE);
 			msgBodyHtmlView.getSettings().setJavaScriptEnabled(true);
 			msgBodyHtmlView.getSettings().setLoadsImagesAutomatically(true);
@@ -1084,29 +1044,9 @@ public class MainActivity extends TabActivity implements
 			//
 			msgBodyHtmlView.loadDataWithBaseURL("file:///android_asset/",
 					message.getBody(), "text/html", "UTF-8", null);
-			msgBodyHtmlView
-					.setOnLongClickListener(new View.OnLongClickListener() {
-
-						@Override
-						public boolean onLongClick(View v) {
-							// 长按: 隐藏
-							removeMessageFromList(message, listItemView);
-							return false;
-						}
-					});
 		} else {
 			// 文本消息
-			final TextView msgBodyView = (TextView) listItemView
-					.findViewById(R.id.msgBody);
 			msgBodyView.setText(message.getBody());
-			msgBodyView.setOnLongClickListener(new View.OnLongClickListener() {
-
-				@Override
-				public boolean onLongClick(View v) { // 长按: 隐藏
-					removeMessageFromList(message, listItemView);
-					return false;
-				}
-			});
 		}
 		//
 		if (!MyApplicationClass.receiveOnly) {
@@ -1133,6 +1073,134 @@ public class MainActivity extends TabActivity implements
 		TextView msgTimeView = (TextView) listItemView
 				.findViewById(R.id.msgTime);
 		msgTimeView.setText(makeTimeString(now, message.getGenerateTime()));
+		//
+		final GestureDetector mGestureDetector = new GestureDetector(
+				MainActivity.this, new OnGestureListener() {
+
+					@Override
+					public boolean onDown(MotionEvent e) {
+						return true; // 非常重要，若是返回false，则无法触发onFling
+					}
+
+					@Override
+					public boolean onFling(MotionEvent e1, MotionEvent e2,
+							float velocityX, float velocityY) {
+						if (e1.getX() - e2.getX() > verticalMinDistance
+								&& Math.abs(velocityX) > minVelocity) {
+							// 收藏/取消收藏(向左滑)
+							if (!message.isFavorite()) {
+								// 收藏
+								db.favourMessage(message.getRecordId(), true);
+								message.setFavorite(true);
+								//
+								Bitmap bitmap = Bitmap.createBitmap(senderIcon
+										.copy(Config.ARGB_8888, true));
+								Canvas canvas = new Canvas(bitmap);
+								canvas.drawBitmap(favoriteFlag, null,
+										new Rect(senderIcon.getWidth()
+												- FAVORITE_FLAG_WIDTH,
+												senderIcon.getHeight()
+														- FAVORITE_FLAG_HEIGHT,
+												senderIcon.getWidth(),
+												senderIcon.getHeight()), null);
+								msgSenderIconView.setImageBitmap(bitmap);
+							} else {
+								// 取消收藏
+								db.favourMessage(message.getRecordId(), false);
+								message.setFavorite(false);
+								//
+								msgSenderIconView.setImageBitmap(senderIcon);
+							}
+							return true;
+						} else if (e2.getX() - e1.getX() > verticalMinDistance
+								&& Math.abs(velocityX) > minVelocity) {
+							// 删除(向右滑)
+							removeMessageFromList(message, listItemView);
+							if (!message.isFavorite()) {
+								db.hideMessage(message.getRecordId(), true);
+							}
+							return true;
+						}
+
+						return false;
+					}
+
+					@Override
+					public void onLongPress(MotionEvent e) {
+					}
+
+					@Override
+					public boolean onScroll(MotionEvent e1, MotionEvent e2,
+							float distanceX, float distanceY) {
+						return false;
+					}
+
+					@Override
+					public void onShowPress(MotionEvent e) {
+					}
+
+					@Override
+					public boolean onSingleTapUp(MotionEvent e) {
+						return false;
+					}
+
+				});
+		listItemView.setOnTouchListener(new OnTouchListener() {
+
+			@Override
+			public boolean onTouch(View v, MotionEvent event) {
+				return mGestureDetector.onTouchEvent(event);
+			}
+		});
+		msgSenderIconView.setOnTouchListener(new OnTouchListener() {
+
+			@Override
+			public boolean onTouch(View v, MotionEvent event) {
+				return mGestureDetector.onTouchEvent(event);
+			}
+		});
+		msgSenderNameView.setOnTouchListener(new OnTouchListener() {
+
+			@Override
+			public boolean onTouch(View v, MotionEvent event) {
+				return mGestureDetector.onTouchEvent(event);
+			}
+		});
+		msgTitleView.setOnTouchListener(new OnTouchListener() {
+
+			@Override
+			public boolean onTouch(View v, MotionEvent event) {
+				return mGestureDetector.onTouchEvent(event);
+			}
+		});
+		msgTimeView.setOnTouchListener(new OnTouchListener() {
+
+			@Override
+			public boolean onTouch(View v, MotionEvent event) {
+				return mGestureDetector.onTouchEvent(event);
+			}
+		});
+		msgBodyView.setOnTouchListener(new OnTouchListener() {
+
+			@Override
+			public boolean onTouch(View v, MotionEvent event) {
+				return mGestureDetector.onTouchEvent(event);
+			}
+		});
+		msgBodyHtmlView.setOnTouchListener(new OnTouchListener() {
+
+			@Override
+			public boolean onTouch(View v, MotionEvent event) {
+				return mGestureDetector.onTouchEvent(event);
+			}
+		});
+		msgAttachmentView.setOnTouchListener(new OnTouchListener() {
+
+			@Override
+			public boolean onTouch(View v, MotionEvent event) {
+				return mGestureDetector.onTouchEvent(event);
+			}
+		});
 		//
 		return listItemView;
 	}

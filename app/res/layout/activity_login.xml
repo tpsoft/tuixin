@@ -34,16 +34,25 @@
             android:layout_marginBottom="16dp"
             android:fontFamily="sans-serif-light"
             android:text="@string/login_progress_hint"
-            android:textColor="@color/login_progress_hint"
-            android:textAppearance="?android:attr/textAppearanceSmall" />
-        </LinearLayout>
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:textColor="@color/login_progress_hint" />
+
+        <TextView
+            android:id="@+id/login_error_message"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:fontFamily="sans-serif-light"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:textColor="@color/login_error_text" />
+    </LinearLayout>
 
     <!-- Login form -->
 
     <ScrollView
         android:id="@+id/login_form"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent" >
 
         <LinearLayout
             style="@style/LoginFormContainer"
@@ -53,12 +62,12 @@
                 android:id="@+id/user_id"
                 android:layout_width="match_parent"
                 android:layout_height="32dip"
+                android:layout_marginBottom="4dip"
                 android:background="@drawable/corners"
                 android:hint="@string/prompt_id"
                 android:inputType="textEmailAddress"
                 android:maxLines="1"
-                android:singleLine="true"
-                android:layout_marginBottom="4dip" />
+                android:singleLine="true" />
 
             <EditText
                 android:id="@+id/password"
@@ -89,16 +98,6 @@
                 android:paddingLeft="32dp"
                 android:paddingRight="32dp"
                 android:text="@string/action_sign_in_register" />
-
-            <TextView
-                android:id="@+id/login_error_message"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="left"
-                android:layout_marginTop="32dp"
-                android:fontFamily="sans-serif-light"
-                android:textColor="#FF0000"
-                android:visibility="gone" />
         </LinearLayout>
     </ScrollView>
 

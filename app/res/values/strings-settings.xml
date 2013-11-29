@@ -11,11 +11,13 @@
     <string name="upload_server">服务器</string>
     <string name="upload_port">端口</string>
     <string name="settings_message">消息</string>
+    <string name="msg_reserve">保留消息</string>
     <string name="popup_msg">弹出消息</string>
     <string name="play_sound">声音提醒</string>
     
     <string name="upload_server_summary">上传图片等文件的服务器的域名或IP地址</string>
     <string name="upload_port_summary">用4至5位数字表示的端口号</string>
+    <string name="msg_reserve_summary">消息保留时长(天)</string>
     <string name="popup_msg_summary">收到新消息时，弹出窗口显示</string>
     <string name="play_sound_summary">收到新消息时，发出声音提醒</string>
     

@@ -39,7 +39,6 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -58,56 +57,13 @@ public class MessageDialog extends Activity implements OnTouchListener,
 					msgCount++;
 
 					updateNotifyView(msgBundle, false);
-
-					if (msgCount == 2) {
-						// 出现第二条消息时允许手势
-						mGestureDetector = new GestureDetector(
-								MessageDialog.this,
-								(OnGestureListener) MessageDialog.this);
-						LinearLayout popupLayout = (LinearLayout) notifyView
-								.findViewById(R.id.message);
-						popupLayout.setOnTouchListener(MessageDialog.this);
-						popupLayout.setLongClickable(true);
-						//
-						LinearLayout msgContainer = (LinearLayout) notifyView
-								.findViewById(R.id.msgContainer);
-						msgContainer.setOnTouchListener(MessageDialog.this);
-						//
-						RelativeLayout msgTitleBar = (RelativeLayout) notifyView
-								.findViewById(R.id.msgTitleBar);
-						msgTitleBar.setOnTouchListener(MessageDialog.this);
-						//
-						TextView msgIndex = (TextView) notifyView
-								.findViewById(R.id.msgIndex);
-						msgIndex.setOnTouchListener(MessageDialog.this);
-						//
-						ImageView msgSender = (ImageView) notifyView
-								.findViewById(R.id.msgSenderIcon);
-						msgSender.setOnTouchListener(MessageDialog.this);
-						//
-						TextView msgTitle = (TextView) notifyView
-								.findViewById(R.id.msgTitle);
-						msgTitle.setOnTouchListener(MessageDialog.this);
-						//
-						TextView msgBody = (TextView) notifyView
-								.findViewById(R.id.msgBody);
-						msgBody.setOnTouchListener(MessageDialog.this);
-						//
-						WebView msgBodyHtml = (WebView) notifyView
-								.findViewById(R.id.msgBodyHtml);
-						msgBodyHtml.setOnTouchListener(MessageDialog.this);
-						//
-						ImageView msgAttachment = (ImageView) notifyView
-								.findViewById(R.id.msgAttachment);
-						msgAttachment.setOnTouchListener(MessageDialog.this);
-					}
 				}
 			}
 		}
 	}
 
-	private static final int POPUP_INFO_TIME = 1000 * 50;
-	private static final int POPUP_ALERT_TIME = 1000 * 60;
+	private static final int POPUP_INFO_TIME = 1000 * 50 * 3;
+	private static final int POPUP_ALERT_TIME = 1000 * 60 * 3;
 
 	private View notifyView;
 	private Timer autoCloseTimer;
@@ -120,6 +76,7 @@ public class MessageDialog extends Activity implements OnTouchListener,
 
 	private GestureDetector mGestureDetector;
 	private int verticalMinDistance = 30;
+	private int horizontalMinDistance = 30;
 	private int minVelocity = 0;
 
 	private Bitmap favoriteFlag;
@@ -153,6 +110,35 @@ public class MessageDialog extends Activity implements OnTouchListener,
 
 		super.onCreate(savedInstanceState);
 
+		// 允许手势
+		mGestureDetector = new GestureDetector(MessageDialog.this,
+				(OnGestureListener) MessageDialog.this);
+		//
+		LinearLayout msgContainer = (LinearLayout) notifyView
+				.findViewById(R.id.msgContainer);
+		msgContainer.setOnTouchListener(MessageDialog.this);
+		TextView msgIndex = (TextView) notifyView
+				.findViewById(R.id.msgIndex);
+		msgIndex.setOnTouchListener(MessageDialog.this);
+		ImageView msgSenderIcon = (ImageView) notifyView
+				.findViewById(R.id.msgSenderIcon);
+		msgSenderIcon.setOnTouchListener(MessageDialog.this);
+		TextView msgSenderName = (TextView) notifyView
+				.findViewById(R.id.msgSenderName);
+		msgSenderName.setOnTouchListener(MessageDialog.this);
+		TextView msgTitle = (TextView) notifyView
+				.findViewById(R.id.msgTitle);
+		msgTitle.setOnTouchListener(MessageDialog.this);
+		TextView msgBody = (TextView) notifyView
+				.findViewById(R.id.msgBody);
+		msgBody.setOnTouchListener(MessageDialog.this);
+		WebView msgBodyHtml = (WebView) notifyView
+				.findViewById(R.id.msgBodyHtml);
+		msgBodyHtml.setOnTouchListener(MessageDialog.this);
+		ImageView msgAttachment = (ImageView) notifyView
+				.findViewById(R.id.msgAttachment);
+		msgAttachment.setOnTouchListener(MessageDialog.this);
+
 		// 准备与后台服务通信
 		myBroadcastReceiver = new MyBroadcastReceiver();
 		//
@@ -185,8 +171,11 @@ public class MessageDialog extends Activity implements OnTouchListener,
 	public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX,
 			float velocityY) {
 
-		if (e1.getX() - e2.getX() > verticalMinDistance
-				&& Math.abs(velocityX) > minVelocity) {
+		if (e1.getY() - e2.getY() > horizontalMinDistance
+				&& Math.abs(velocityY) > minVelocity) {
+			// 上一条(向上滑)
+			if (msgCount < 2)
+				return false;
 			if (msgNumber > 1) {
 				msgNumber--;
 				updateNotifyView(msgBundles.get(msgNumber - 1), true);
@@ -194,8 +183,12 @@ public class MessageDialog extends Activity implements OnTouchListener,
 				Toast.makeText(this, R.string.msg_first, Toast.LENGTH_SHORT)
 						.show();
 			}
-		} else if (e2.getX() - e1.getX() > verticalMinDistance
-				&& Math.abs(velocityX) > minVelocity) {
+			return true;
+		} else if (e2.getY() - e1.getY() > horizontalMinDistance
+				&& Math.abs(velocityY) > minVelocity) {
+			// 下一条(向下滑)
+			if (msgCount < 2)
+				return false;
 			if (msgNumber < msgBundles.size()) {
 				msgNumber++;
 				updateNotifyView(msgBundles.get(msgNumber - 1), true);
@@ -203,6 +196,45 @@ public class MessageDialog extends Activity implements OnTouchListener,
 				Toast.makeText(this, R.string.msg_last, Toast.LENGTH_SHORT)
 						.show();
 			}
+			return true;
+		} else if (e1.getX() - e2.getX() > verticalMinDistance
+				&& Math.abs(velocityX) > minVelocity) {
+			// 收藏/取消收藏(向左滑)
+			Bundle msgBundle = msgBundles.get(msgNumber - 1);
+			//
+			boolean favorite = msgBundle.getBoolean("favorite", false);
+			ImageView msgSenderIcon = (ImageView) notifyView
+					.findViewById(R.id.msgSenderIcon);
+			Bitmap senderIcon;
+			if (msgBundle.getBoolean("showIcon")) {
+				senderIcon = MyApplicationClass.loadImage(msgBundle
+						.getString("iconUrl"));
+				showSenderIcon(msgSenderIcon, senderIcon, !favorite);
+			}
+			//
+			Intent i = new Intent();
+			i.setAction(MainActivity.MESSAGE_DIALOG_CLASSNAME);
+			i.putExtra("action", favorite ? "unfavorite" : "favorite");
+			i.putExtra("id", msgBundle.getInt("id"));
+			sendBroadcast(i);
+			//
+			msgBundle.putBoolean("favorite", !favorite);
+			return true;
+		} else if (e2.getX() - e1.getX() > verticalMinDistance
+				&& Math.abs(velocityX) > minVelocity) {
+			// 删除(向右滑)
+			Bundle msgBundle = msgBundles.get(msgNumber - 1);
+			//
+			Intent i = new Intent();
+			i.setAction(MainActivity.MESSAGE_DIALOG_CLASSNAME);
+			i.putExtra("action", "remove");
+			i.putExtra("id", msgBundle.getInt("id"));
+			sendBroadcast(i);
+			//
+			Message message = new Message();
+			message.what = MESSAGE_REMOVE_MESSAGE;
+			msgHandler.sendMessage(message);
+			return true;
 		}
 
 		return false;
@@ -210,7 +242,7 @@ public class MessageDialog extends Activity implements OnTouchListener,
 
 	@Override
 	public boolean onDown(MotionEvent arg0) {
-		return false;
+		return true;
 	}
 
 	@Override
@@ -359,25 +391,6 @@ public class MessageDialog extends Activity implements OnTouchListener,
 					.getString("iconUrl"));
 			boolean favorite = msgBundle.getBoolean("favorite", false);
 			showSenderIcon(msgSenderIcon, senderIcon, favorite);
-			//
-			msgSenderIcon.setOnClickListener(new View.OnClickListener() {
-
-				@Override
-				public void onClick(View view) {
-					// 收藏/取消收藏
-					int id = msgBundle.getInt("id");
-					boolean favorite = msgBundle.getBoolean("favorite", false);
-					showSenderIcon(msgSenderIcon, senderIcon, !favorite);
-					//
-					Intent i = new Intent();
-					i.setAction(MainActivity.MESSAGE_DIALOG_CLASSNAME);
-					i.putExtra("action", favorite ? "unfavorite" : "favorite");
-					i.putExtra("id", id);
-					sendBroadcast(i);
-					//
-					msgBundle.putBoolean("favorite", !favorite);
-				}
-			});
 		} else {
 			senderIcon = null;
 			msgSenderIcon.setImageBitmap(null);
@@ -445,23 +458,6 @@ public class MessageDialog extends Activity implements OnTouchListener,
 			msgBodyHtml.setVisibility(View.GONE);
 			//
 			msgBody.setText(msgBundle.getString("body"));
-			msgBody.setOnLongClickListener(new View.OnLongClickListener() {
-
-				@Override
-				public boolean onLongClick(View v) {
-					// 长按: 隐藏
-					Intent i = new Intent();
-					i.setAction(MainActivity.MESSAGE_DIALOG_CLASSNAME);
-					i.putExtra("action", "remove");
-					i.putExtra("id", msgBundle.getInt("id"));
-					sendBroadcast(i);
-					//
-					Message message = new Message();
-					message.what = MESSAGE_REMOVE_MESSAGE;
-					msgHandler.sendMessage(message);
-					return false;
-				}
-			});
 		} else {
 
 			TextView msgBody = (TextView) notifyView.findViewById(R.id.msgBody);
@@ -476,23 +472,6 @@ public class MessageDialog extends Activity implements OnTouchListener,
 			//
 			msgBodyHtml.loadDataWithBaseURL("file:///android_asset/",
 					msgBundle.getString("body"), "text/html", "UTF-8", null);
-			msgBodyHtml.setOnLongClickListener(new View.OnLongClickListener() {
-
-				@Override
-				public boolean onLongClick(View v) {
-					// 长按: 隐藏
-					Intent i = new Intent();
-					i.setAction(MainActivity.MESSAGE_DIALOG_CLASSNAME);
-					i.putExtra("action", "remove");
-					i.putExtra("id", msgBundle.getInt("id"));
-					sendBroadcast(i);
-					//
-					Message message = new Message();
-					message.what = MESSAGE_REMOVE_MESSAGE;
-					msgHandler.sendMessage(message);
-					return false;
-				}
-			});
 		}
 		// 图片
 		ImageView msgAttachment = (ImageView) notifyView

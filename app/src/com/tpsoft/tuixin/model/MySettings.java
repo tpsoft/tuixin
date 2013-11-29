@@ -21,6 +21,7 @@ public class MySettings {
 	private static final String DEFAULT_CLIENT_PASSWORD = ""; // 默认登录密码
 	private static final boolean DEFAULT_AUTO_LOGIN = false; // 默认自动登录
 
+	private static final int DEFAULT_MSG_RESERVE = 3; // 默认消息保留时长（天）
 	private static final boolean DEFAULT_POPUP_MSG = true; // 默认弹出消息状态
 	private static final boolean DEFAULT_PLAY_SOUND = true; // 默认声音提醒状态（仅在允许弹出消息时有效）
 
@@ -31,6 +32,7 @@ public class MySettings {
 	private String clientId; // 客户ID
 	private String clientPassword; // 客户密码
 	private boolean autoLogin; // 自动登录
+	private int msgReserve; // 消息保留时长(天)
 	private boolean popupMsg; // 弹出消息
 	private boolean playSound; // 声音提醒
 
@@ -74,8 +76,8 @@ public class MySettings {
 		return autoLogin;
 	}
 
-	public void setAutoLogin(boolean autoLogin) {
-		this.autoLogin = autoLogin;
+	public int getMsgReserve() {
+		return msgReserve;
 	}
 
 	public boolean isPopupMsg() {
@@ -99,13 +101,16 @@ public class MySettings {
 		if (clientId.equals(DEFAULT_CLIENT_ID)) {
 			clientId = readClientId(context);
 		}
-		clientPassword = prefs.getString("clientPassword", DEFAULT_CLIENT_PASSWORD);
+		clientPassword = prefs.getString("clientPassword",
+				DEFAULT_CLIENT_PASSWORD);
 		autoLogin = prefs.getBoolean("autoLogin", DEFAULT_AUTO_LOGIN);
 
+		msgReserve = Integer.parseInt(prefs.getString("msgReserve",
+				Integer.toString(DEFAULT_MSG_RESERVE)));
 		popupMsg = prefs.getBoolean("popupMsg", DEFAULT_POPUP_MSG);
 		playSound = prefs.getBoolean("playSound", DEFAULT_PLAY_SOUND);
 	}
-	
+
 	public static String readClientId(Context context) {
 		TelephonyManager telMgr = (TelephonyManager) context
 				.getSystemService(Context.TELEPHONY_SERVICE);
