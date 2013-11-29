@@ -32,11 +32,15 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
+import android.view.GestureDetector;
+import android.view.GestureDetector.OnGestureListener;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.View.OnTouchListener;
 import android.view.ViewGroup.LayoutParams;
 import android.webkit.WebView;
 import android.widget.AdapterView;
@@ -46,6 +50,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.PopupWindow;
+import android.widget.ScrollView;
 import android.widget.TabHost;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -318,6 +323,7 @@ public class MainActivity extends TabActivity implements
 	private Map<Integer/* msgId */, Bitmap> msgSenderIcons = new HashMap<Integer, Bitmap>();
 	private Map<Integer/* msgId */, View> msgListItemViews = new HashMap<Integer, View>();
 
+	private ScrollView msgContainer;
 	private LinearLayout msg;
 
 	private NotificationManager mNM;
@@ -362,6 +368,15 @@ public class MainActivity extends TabActivity implements
 		mNM = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 
 		// 初始化消息控件
+		msgContainer = (ScrollView) findViewById(R.id.msgContainer);
+		msgContainer.setOnTouchListener(new OnTouchListener() {
+
+			@Override
+			public boolean onTouch(View v, MotionEvent event) {
+				// Log.d(TAG_MAINLOG, "onTouch: "+event.toString());
+				return false;
+			}
+		});
 		msg = (LinearLayout) findViewById(R.id.msg);
 
 		// 创建 Handler 对象
@@ -898,6 +913,63 @@ public class MainActivity extends TabActivity implements
 		LayoutInflater inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
 		final View listItemView = inflater.inflate(R.layout.message_list_item,
 				null);
+		final GestureDetector mGestureDetector = new GestureDetector(
+				MainActivity.this, new OnGestureListener() {
+
+					private int verticalMinDistance = 30;
+					private int minVelocity = 0;
+
+					@Override
+					public boolean onDown(MotionEvent arg0) {
+						return false;
+					}
+
+					@Override
+					public boolean onFling(MotionEvent e1, MotionEvent e2,
+							float velocityX, float velocityY) {
+						if (e1.getX() - e2.getX() > verticalMinDistance
+								&& Math.abs(velocityX) > minVelocity) {
+							Toast.makeText(MainActivity.this,
+									R.string.msg_first, Toast.LENGTH_SHORT)
+									.show();
+						} else if (e2.getX() - e1.getX() > verticalMinDistance
+								&& Math.abs(velocityX) > minVelocity) {
+							Toast.makeText(MainActivity.this,
+									R.string.msg_last, Toast.LENGTH_SHORT)
+									.show();
+						}
+
+						return false;
+					}
+
+					@Override
+					public void onLongPress(MotionEvent arg0) {
+					}
+
+					@Override
+					public boolean onScroll(MotionEvent arg0, MotionEvent arg1,
+							float arg2, float arg3) {
+						return false;
+					}
+
+					@Override
+					public void onShowPress(MotionEvent arg0) {
+					}
+
+					@Override
+					public boolean onSingleTapUp(MotionEvent arg0) {
+						return false;
+					}
+
+				});
+		listItemView.setOnTouchListener(new OnTouchListener() {
+
+			@Override
+			public boolean onTouch(View v, MotionEvent event) {
+				return mGestureDetector.onTouchEvent(event);
+			}
+		});
+
 		final ImageView msgSenderIconView = (ImageView) listItemView
 				.findViewById(R.id.msgSenderIcon);
 		ImageView msgStatusView = (ImageView) listItemView
