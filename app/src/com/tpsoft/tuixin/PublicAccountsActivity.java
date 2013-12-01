@@ -137,6 +137,13 @@ public class PublicAccountsActivity extends Activity implements
 				ALL_PUBLIC_ACCOUNTS_QUERY_CONDITION);
 	}
 
+	@Override
+	protected void onDestroy() {
+		mClient.release();
+
+		super.onDestroy();
+	}
+
 	@SuppressWarnings("unchecked")
 	private void showPublicAccounts(List<PublicAccount> accounts) {
 		MyTask mTask = new MyTask();

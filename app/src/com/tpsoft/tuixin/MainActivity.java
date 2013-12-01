@@ -145,10 +145,11 @@ public class MainActivity extends TabActivity implements
 					// 删除
 					int id = intent.getIntExtra("id", -1);
 					if (id != -1 && messages.containsKey(id)) {
+						if (!messages.get(id).isFavorite()) {
+							db.hideMessage(messages.get(id).getRecordId(), true);
+						}
 						removeMessageFromList(messages.get(id),
 								msgListItemViews.get(id));
-						if (!messages.get(id).isFavorite())
-							db.hideMessage(messages.get(id).getRecordId(), true);
 					}
 				} else if (action.equals("sendMessage")) {
 					// 发送消息(回复)
@@ -365,11 +366,6 @@ public class MainActivity extends TabActivity implements
 
 		// 准备与后台服务通信
 		myBroadcastReceiver = new MyBroadcastReceiver();
-		try {
-			unregisterReceiver(myBroadcastReceiver);
-		} catch (Exception e) {
-			;
-		}
 		//
 		IntentFilter filter = new IntentFilter();
 		filter.addAction(MESSAGE_DIALOG_CLASSNAME);
@@ -413,6 +409,7 @@ public class MainActivity extends TabActivity implements
 
 	@Override
 	protected void onDestroy() {
+		mClient.release();
 		mNM.cancel(R.id.app_notification_id);
 
 		super.onDestroy();
@@ -898,63 +895,6 @@ public class MainActivity extends TabActivity implements
 		LayoutInflater inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
 		final View listItemView = inflater.inflate(R.layout.message_list_item,
 				null);
-		final GestureDetector mGestureDetector = new GestureDetector(
-				MainActivity.this, new OnGestureListener() {
-
-					private int verticalMinDistance = 30;
-					private int minVelocity = 0;
-
-					@Override
-					public boolean onDown(MotionEvent arg0) {
-						return false;
-					}
-
-					@Override
-					public boolean onFling(MotionEvent e1, MotionEvent e2,
-							float velocityX, float velocityY) {
-						if (e1.getX() - e2.getX() > verticalMinDistance
-								&& Math.abs(velocityX) > minVelocity) {
-							Toast.makeText(MainActivity.this,
-									R.string.msg_first, Toast.LENGTH_SHORT)
-									.show();
-						} else if (e2.getX() - e1.getX() > verticalMinDistance
-								&& Math.abs(velocityX) > minVelocity) {
-							Toast.makeText(MainActivity.this,
-									R.string.msg_last, Toast.LENGTH_SHORT)
-									.show();
-						}
-
-						return false;
-					}
-
-					@Override
-					public void onLongPress(MotionEvent arg0) {
-					}
-
-					@Override
-					public boolean onScroll(MotionEvent arg0, MotionEvent arg1,
-							float arg2, float arg3) {
-						return false;
-					}
-
-					@Override
-					public void onShowPress(MotionEvent arg0) {
-					}
-
-					@Override
-					public boolean onSingleTapUp(MotionEvent arg0) {
-						return false;
-					}
-
-				});
-		listItemView.setOnTouchListener(new OnTouchListener() {
-
-			@Override
-			public boolean onTouch(View v, MotionEvent event) {
-				return mGestureDetector.onTouchEvent(event);
-			}
-		});
-
 		final ImageView msgSenderIconView = (ImageView) listItemView
 				.findViewById(R.id.msgSenderIcon);
 		msgSenderIconView.setOnTouchListener(new OnTouchListener() {
@@ -1115,10 +1055,10 @@ public class MainActivity extends TabActivity implements
 						} else if (e2.getX() - e1.getX() > verticalMinDistance
 								&& Math.abs(velocityX) > minVelocity) {
 							// 删除(向右滑)
-							removeMessageFromList(message, listItemView);
 							if (!message.isFavorite()) {
 								db.hideMessage(message.getRecordId(), true);
 							}
+							removeMessageFromList(message, listItemView);
 							return true;
 						}
 

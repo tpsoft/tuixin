@@ -126,6 +126,13 @@ public class LoginActivity extends Activity implements
 	}
 
 	@Override
+	protected void onDestroy() {
+		mClient.release();
+
+		super.onDestroy();
+	}
+
+	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		super.onCreateOptionsMenu(menu);
 		getMenuInflater().inflate(R.menu.activity_login, menu);

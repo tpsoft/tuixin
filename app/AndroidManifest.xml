@@ -30,7 +30,6 @@
         android:launchMode="singleInstance" >
         <activity
             android:name="com.tpsoft.tuixin.SplashScreen"
-            android:launchMode="singleInstance"
             android:theme="@android:style/Theme.NoTitleBar" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -39,7 +38,6 @@
         </activity>
         <activity
             android:name="com.tpsoft.tuixin.LoginActivity"
-            android:launchMode="singleInstance"
             android:label="@string/title_activity_login"
             android:windowSoftInputMode="adjustResize|stateVisible"
             android:theme="@android:style/Theme.NoTitleBar" >
