@@ -14,9 +14,9 @@ import android.telephony.TelephonyManager;
 public class MySettings {
 
 	public static final String DEFAULT_SERVER_HOST = "isajia.com"; // 默认服务地址
-	public static final int DEFAULT_SERVER_PORT = 1234; // 默认服务端口
+	public static final int DEFAULT_SERVER_PORT = 1234; //3457; // 默认服务端口
 	public static final String DEFAULT_UPLOAD_SERVER = DEFAULT_SERVER_HOST; // 默认上传服务器
-	public static final int DEFAULT_UPLOAD_PORT = 2345; // 默认上传端口
+	public static final int DEFAULT_UPLOAD_PORT = 2345; //3457; // 默认上传端口
 	private static final String DEFAULT_CLIENT_ID = "00000000000"; // 默认账号名称
 	private static final String DEFAULT_CLIENT_PASSWORD = ""; // 默认登录密码
 	private static final boolean DEFAULT_AUTO_LOGIN = false; // 默认自动登录

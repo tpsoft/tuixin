@@ -7,11 +7,9 @@ import java.util.List;
 import java.util.Map;
 
 import android.app.Application;
-import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
-import com.tpsoft.pushnotification.service.NotifyPushService;
 import com.tpsoft.tuixin.db.DBManager;
 import com.tpsoft.tuixin.model.MyMessageSupportSave;
 import com.tpsoft.tuixin.model.MySettings;
@@ -19,9 +17,9 @@ import com.tpsoft.tuixin.utils.PlaySoundPool;
 
 public class MyApplicationClass extends Application {
 
-	public static final String APP_ID = "4083AD3D-0F41-B78E-4F5D-F41A515F2667";
-	public static final String APP_PASSWORD = "@0Vd*4Ak";
-	public static final String LOGIN_PROTECT_KEY = "n9SfmcRs";
+	public static final String APP_ID = "4083AD3D-0F41-B78E-4F5D-F41A515F2667"; //"5A6D032A-DB6C-43BF-98EE-A699FBCAA628"
+	public static final String APP_PASSWORD = "@0Vd*4Ak"; //"THHgux8k"
+	public static final String LOGIN_PROTECT_KEY = "n9SfmcRs"; //"cpuHCK9V"
 
 	public static final boolean ALERT_MSG = false;
 	public static final int INFO_SOUND = 1;
@@ -88,17 +86,6 @@ public class MyApplicationClass extends Application {
 
 		// 装入用户设置
 		loadUserSettings();
-
-		// 启动后台服务
-		Intent intent = new Intent(this, NotifyPushService.class);
-		intent.putExtra("ActivityClassName", MainActivity.MY_CLASSNAME);
-		intent.putExtra("notification_logo", R.drawable.ic_launcher);
-		intent.putExtra("notification_title",
-				getText(R.string.notification_title).toString());
-		intent.putExtra("notification_message",
-				getText(R.string.notification_message).toString());
-		startService(intent);
-
 	}
 
 	public void loadUserSettings() {

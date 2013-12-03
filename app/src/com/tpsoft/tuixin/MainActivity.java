@@ -409,7 +409,7 @@ public class MainActivity extends TabActivity implements
 
 	@Override
 	protected void onDestroy() {
-		mClient.release();
+		mClient.release(true); // 停止后台服务
 		mNM.cancel(R.id.app_notification_id);
 
 		super.onDestroy();

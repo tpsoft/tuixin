@@ -139,7 +139,7 @@ public class PublicAccountsActivity extends Activity implements
 
 	@Override
 	protected void onDestroy() {
-		mClient.release();
+		mClient.release(false);
 
 		super.onDestroy();
 	}

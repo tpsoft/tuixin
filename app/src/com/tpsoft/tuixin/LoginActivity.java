@@ -66,8 +66,8 @@ public class LoginActivity extends Activity implements
 		setContentView(R.layout.activity_login);
 		getWindow().setBackgroundDrawableResource(R.drawable.loginwindow);
 
-		// 实例化客户端
-		mClient = new PushNotificationClient(this);
+		// 实例化客户端(允许显示状态栏通知图标)
+		mClient = new PushNotificationClient(this.getApplicationContext());
 		mClient.addListener(this);
 
 		imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
@@ -127,7 +127,7 @@ public class LoginActivity extends Activity implements
 
 	@Override
 	protected void onDestroy() {
-		mClient.release();
+		mClient.release(false); // 不停止后台服务
 
 		super.onDestroy();
 	}
@@ -168,6 +168,7 @@ public class LoginActivity extends Activity implements
 			// 取消登录
 			if (mLoginStatusView.getVisibility() == View.VISIBLE) {
 				mClient.stopMessageTransceiver();
+				showProgress(false);
 				return true;
 			}
 			break;
@@ -240,8 +241,15 @@ public class LoginActivity extends Activity implements
 			NetworkParams networkParams = new NetworkParams();
 
 			// 启动消息收发器(并登录)
-			mClient.startMessageTransceiver(appParams, loginParams,
-					networkParams);
+			try {
+
+				// 实例化客户端(允许显示状态栏通知图标)
+				mClient.startMessageTransceiver(appParams, loginParams,
+						networkParams);
+			} catch (Exception e) {
+				Log.w(TAG_LOGINLOG, e.getMessage());
+				showProgress(false);
+			}
 		}
 	}
 
@@ -331,8 +339,9 @@ public class LoginActivity extends Activity implements
 				mPasswordView.requestFocus();
 				imm.showSoftInputFromInputMethod(
 						mPasswordView.getWindowToken(), 0);
+				showProgress(false);
 			} else {
-				mLoginErrorMessageView.setText(text);				
+				mLoginErrorMessageView.setText(text);
 			}
 		}
 	}
