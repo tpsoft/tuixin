@@ -47,6 +47,7 @@ import android.webkit.WebView;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
@@ -97,200 +98,6 @@ public class MainActivity extends TabActivity implements
 	private static final int MESSAGE_SHOW_NOTIFICATION = 2;
 	private static final int MESSAGE_UPDATE_TIME = 3;
 
-	private class MyBroadcastReceiver extends BroadcastReceiver {
-
-		@Override
-		public void onReceive(Context context, Intent intent) {
-			if (intent.getAction().equals(MESSAGE_DIALOG_CLASSNAME)) {
-				// 消息弹出通知
-				String action = intent.getStringExtra("action");
-				if (action.equals("popupClosed")) {
-					// 弹出窗口已关闭
-					messagePopupClosed = true;
-				} else if (action.equals("favorite")
-						|| action.equals("unfavorite")) {
-					// 收藏/取消收藏
-					boolean favorite = action.equals("favorite");
-					int id = intent.getIntExtra("id", -1);
-					if (id != -1 && messages.containsKey(id)) {
-						MyMessageSupportSave message = messages.get(id);
-						ImageView msgSenderView = (ImageView) msgListItemViews
-								.get(id).findViewById(R.id.msgSenderIcon);
-						//
-						Bitmap senderIcon = msgSenderIcons.get(id);
-						if (favorite) {
-							db.favourMessage(message.getRecordId(), true);
-							message.setFavorite(true);
-							//
-							Bitmap bitmap = Bitmap.createBitmap(senderIcon
-									.copy(Config.ARGB_8888, true));
-							Canvas canvas = new Canvas(bitmap);
-							canvas.drawBitmap(
-									favoriteFlag,
-									null,
-									new Rect(senderIcon.getWidth()
-											- FAVORITE_FLAG_WIDTH,
-											senderIcon.getHeight()
-													- FAVORITE_FLAG_HEIGHT,
-											senderIcon.getWidth(), senderIcon
-													.getHeight()), null);
-							msgSenderView.setImageBitmap(bitmap);
-						} else {
-							db.favourMessage(message.getRecordId(), false);
-							message.setFavorite(false);
-							msgSenderView.setImageBitmap(senderIcon);
-						}
-					}
-				} else if (action.equals("remove")) {
-					// 删除
-					int id = intent.getIntExtra("id", -1);
-					if (id != -1 && messages.containsKey(id)) {
-						if (!messages.get(id).isFavorite()) {
-							db.hideMessage(messages.get(id).getRecordId(), true);
-						}
-						removeMessageFromList(messages.get(id),
-								msgListItemViews.get(id));
-					}
-				} else if (action.equals("sendMessage")) {
-					// 发送消息(回复)
-					int msgId = MyApplicationClass.nextMsgId++;
-					String receiver = intent.getStringExtra("receiver");
-					String title = intent.getStringExtra("title");
-					String body = intent.getStringExtra("body");
-					boolean record = intent.getBooleanExtra("record", false);
-					sendMessage(msgId, receiver, title, body);
-					if (record) {
-						MyMessageSupportSave msg = new MyMessageSupportSave();
-						msg.setMessageId(msgId);
-						msg.setSender("me");
-						msg.setReceiver(receiver);
-						msg.setTitle(title);
-						msg.setBody(body);
-						msg.setGenerateTime(new Date());
-						showMsg(msg,
-								BitmapFactory.decodeResource(
-										MainActivity.this.getResources(),
-										R.drawable.me), null, true);
-					}
-				}
-			} else if (intent.getAction().equals(MESSAGE_SEND_CLASSNAME)) {
-				// 消息发送通知
-				String action = intent.getStringExtra("action");
-				if (action.equals("send")) {
-					if (intent.hasExtra("errmsg")) {
-						Toast.makeText(MainActivity.this,
-								"发送消息失败：" + intent.getStringExtra("errmsg"),
-								Toast.LENGTH_LONG).show();
-						return;
-					}
-
-					MyMessage msg;
-					try {
-						msg = new MyMessage(intent.getBundleExtra("message"));
-					} catch (ParseException e) {
-						Log.e(TAG_MAINLOG, e.getMessage());
-						return;
-					}
-					//
-					int msgId = MyApplicationClass.nextMsgId++;
-					msg.setSender("me");
-					//
-					mClient.sendMessage(msgId, msg);
-					//
-					Bitmap msgAttachment = null;
-					if (intent.hasExtra("photo")) {
-						msgAttachment = intent.getParcelableExtra("photo");
-					}
-					MyMessageSupportSave msg2 = new MyMessageSupportSave(msg);
-					msg2.setMessageId(msgId);
-					showMsg(msg2, BitmapFactory.decodeResource(
-							MainActivity.this.getResources(), R.drawable.me),
-							msgAttachment, true);
-				}
-			}
-		}
-	}
-
-	private static class MessageHandler extends Handler {
-		private WeakReference<MainActivity> mActivity;
-
-		public MessageHandler(MainActivity activity) {
-			mActivity = new WeakReference<MainActivity>(activity);
-		}
-
-		@Override
-		public void handleMessage(Message msg) {
-			MyMessageSupportSave message;
-			switch (msg.what) {
-			case MESSAGE_START_RECEIVER:
-				mActivity.get().startMessageReceiver();
-				break;
-			case MESSAGE_SHOW_NOTIFICATION:
-				Bundle msgParams = msg.getData();
-				Bitmap senderIcon = msgParams.get("iconUrl") != null ? MyApplicationClass
-						.loadImage(msgParams.getString("iconUrl")) : null;
-				if (senderIcon != null) {
-					msgParams.putBoolean("showIcon", true);
-				} else {
-					msgParams.putBoolean("showIcon", false);
-				}
-				Bitmap msgAttachment = msgParams.get("attachmentUrl") != null ? MyApplicationClass
-						.loadImage(msgParams.getString("attachmentUrl")) : null;
-				if (msgAttachment != null) {
-					msgParams.putBoolean("showAttachment", true);
-				} else {
-					msgParams.putBoolean("showAttachment", false);
-				}
-				message = (MyMessageSupportSave) msg.obj;
-				// 添加到消息列表
-				mActivity.get().showMsg(message, senderIcon, msgAttachment,
-						false);
-				//
-				if (MyApplicationClass.userSettings.isPopupMsg()) {
-					// 显示/更新消息对话框
-					Intent messageDialogIntent = (messagePopupClosed ? new Intent(
-							mActivity.get(), MessageDialog.class)
-							: new Intent());
-					messageDialogIntent.putExtras(msgParams);
-					if (messagePopupClosed) {
-						// 声音提醒
-						if (MyApplicationClass.userSettings.isPlaySound()) {
-							MyApplicationClass.playSoundPool
-									.play(MyApplicationClass.ALERT_MSG ? MyApplicationClass.ALERT_SOUND
-											: MyApplicationClass.INFO_SOUND, 0);
-						}
-						// 显示消息对话框
-						mActivity.get().startActivity(messageDialogIntent);
-						messagePopupClosed = false;
-					} else {
-						// 更新消息对话框
-						messageDialogIntent.setAction(MY_CLASSNAME);
-						messageDialogIntent.putExtra("action", "update");
-						mActivity.get().sendBroadcast(messageDialogIntent);
-					}
-				}
-				break;
-			case MESSAGE_UPDATE_TIME:
-				// 更新消息生成时间
-				Date now = new Date();
-				for (int i = 0; i < mActivity.get().msgCount; i++) {
-					message = MyApplicationClass.latestMsgs.get(i);
-					View listItemView = mActivity.get().msg.getChildAt(i * 2);
-					TextView msgTimeView = (TextView) listItemView
-							.findViewById(R.id.msgTime);
-					String newMsgTime = mActivity.get().makeTimeString(now,
-							message.getGenerateTime());
-					if (!msgTimeView.getText().toString().equals(newMsgTime)) {
-						msgTimeView.setText(newMsgTime);
-					}
-				}
-				break;
-			default:
-				super.handleMessage(msg);
-			}
-		}
-	};
-
 	private PushNotificationClient mClient;
 
 	private int msgCount = 0;
@@ -300,6 +107,7 @@ public class MainActivity extends TabActivity implements
 
 	private ScrollView msgContainer;
 	private LinearLayout msg;
+	private Button btnMoreMsg;
 
 	private int verticalMinDistance = 30;
 	private int minVelocity = 0;
@@ -356,6 +164,7 @@ public class MainActivity extends TabActivity implements
 			}
 		});
 		msg = (LinearLayout) findViewById(R.id.msg);
+		btnMoreMsg = (Button) findViewById(R.id.btnMoreMsg);
 
 		// 初始化收藏标志
 		favoriteFlag = BitmapFactory.decodeResource(
@@ -405,6 +214,18 @@ public class MainActivity extends TabActivity implements
 		}
 		MyApplicationClass.latestMsgs.addAll(messages);
 		showMessages(messages);
+
+		// 统计消息总数
+		int msgTotalCount = db.countMessages(null);
+		int leftMsgCount = msgTotalCount - messages.size();
+		if (leftMsgCount > 0) {
+			btnMoreMsg.setText(String.format(
+					getText(R.string.msg_more).toString(),
+					(leftMsgCount <= LOAD_MSG_COUNT ? Integer
+							.toString(leftMsgCount) : (String.format("%d/%d",
+							LOAD_MSG_COUNT, leftMsgCount)))));
+			btnMoreMsg.setVisibility(View.VISIBLE);
+		}
 	}
 
 	@Override
@@ -1277,4 +1098,197 @@ public class MainActivity extends TabActivity implements
 		return i;
 	}
 
+	private class MyBroadcastReceiver extends BroadcastReceiver {
+
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			if (intent.getAction().equals(MESSAGE_DIALOG_CLASSNAME)) {
+				// 消息弹出通知
+				String action = intent.getStringExtra("action");
+				if (action.equals("popupClosed")) {
+					// 弹出窗口已关闭
+					messagePopupClosed = true;
+				} else if (action.equals("favorite")
+						|| action.equals("unfavorite")) {
+					// 收藏/取消收藏
+					boolean favorite = action.equals("favorite");
+					int id = intent.getIntExtra("id", -1);
+					if (id != -1 && messages.containsKey(id)) {
+						MyMessageSupportSave message = messages.get(id);
+						ImageView msgSenderView = (ImageView) msgListItemViews
+								.get(id).findViewById(R.id.msgSenderIcon);
+						//
+						Bitmap senderIcon = msgSenderIcons.get(id);
+						if (favorite) {
+							db.favourMessage(message.getRecordId(), true);
+							message.setFavorite(true);
+							//
+							Bitmap bitmap = Bitmap.createBitmap(senderIcon
+									.copy(Config.ARGB_8888, true));
+							Canvas canvas = new Canvas(bitmap);
+							canvas.drawBitmap(
+									favoriteFlag,
+									null,
+									new Rect(senderIcon.getWidth()
+											- FAVORITE_FLAG_WIDTH,
+											senderIcon.getHeight()
+													- FAVORITE_FLAG_HEIGHT,
+											senderIcon.getWidth(), senderIcon
+													.getHeight()), null);
+							msgSenderView.setImageBitmap(bitmap);
+						} else {
+							db.favourMessage(message.getRecordId(), false);
+							message.setFavorite(false);
+							msgSenderView.setImageBitmap(senderIcon);
+						}
+					}
+				} else if (action.equals("remove")) {
+					// 删除
+					int id = intent.getIntExtra("id", -1);
+					if (id != -1 && messages.containsKey(id)) {
+						if (!messages.get(id).isFavorite()) {
+							db.hideMessage(messages.get(id).getRecordId(), true);
+						}
+						removeMessageFromList(messages.get(id),
+								msgListItemViews.get(id));
+					}
+				} else if (action.equals("sendMessage")) {
+					// 发送消息(回复)
+					int msgId = MyApplicationClass.nextMsgId++;
+					String receiver = intent.getStringExtra("receiver");
+					String title = intent.getStringExtra("title");
+					String body = intent.getStringExtra("body");
+					boolean record = intent.getBooleanExtra("record", false);
+					sendMessage(msgId, receiver, title, body);
+					if (record) {
+						MyMessageSupportSave msg = new MyMessageSupportSave();
+						msg.setMessageId(msgId);
+						msg.setSender("me");
+						msg.setReceiver(receiver);
+						msg.setTitle(title);
+						msg.setBody(body);
+						msg.setGenerateTime(new Date());
+						showMsg(msg,
+								BitmapFactory.decodeResource(
+										MainActivity.this.getResources(),
+										R.drawable.me), null, true);
+					}
+				}
+			} else if (intent.getAction().equals(MESSAGE_SEND_CLASSNAME)) {
+				// 消息发送通知
+				String action = intent.getStringExtra("action");
+				if (action.equals("send")) {
+					if (intent.hasExtra("errmsg")) {
+						Toast.makeText(MainActivity.this,
+								"发送消息失败：" + intent.getStringExtra("errmsg"),
+								Toast.LENGTH_LONG).show();
+						return;
+					}
+
+					MyMessage msg;
+					try {
+						msg = new MyMessage(intent.getBundleExtra("message"));
+					} catch (ParseException e) {
+						Log.e(TAG_MAINLOG, e.getMessage());
+						return;
+					}
+					//
+					int msgId = MyApplicationClass.nextMsgId++;
+					msg.setSender("me");
+					//
+					mClient.sendMessage(msgId, msg);
+					//
+					Bitmap msgAttachment = null;
+					if (intent.hasExtra("photo")) {
+						msgAttachment = intent.getParcelableExtra("photo");
+					}
+					MyMessageSupportSave msg2 = new MyMessageSupportSave(msg);
+					msg2.setMessageId(msgId);
+					showMsg(msg2, BitmapFactory.decodeResource(
+							MainActivity.this.getResources(), R.drawable.me),
+							msgAttachment, true);
+				}
+			}
+		}
+	}
+
+	private static class MessageHandler extends Handler {
+		private WeakReference<MainActivity> mActivity;
+
+		public MessageHandler(MainActivity activity) {
+			mActivity = new WeakReference<MainActivity>(activity);
+		}
+
+		@Override
+		public void handleMessage(Message msg) {
+			MyMessageSupportSave message;
+			switch (msg.what) {
+			case MESSAGE_START_RECEIVER:
+				mActivity.get().startMessageReceiver();
+				break;
+			case MESSAGE_SHOW_NOTIFICATION:
+				Bundle msgParams = msg.getData();
+				Bitmap senderIcon = msgParams.get("iconUrl") != null ? MyApplicationClass
+						.loadImage(msgParams.getString("iconUrl")) : null;
+				if (senderIcon != null) {
+					msgParams.putBoolean("showIcon", true);
+				} else {
+					msgParams.putBoolean("showIcon", false);
+				}
+				Bitmap msgAttachment = msgParams.get("attachmentUrl") != null ? MyApplicationClass
+						.loadImage(msgParams.getString("attachmentUrl")) : null;
+				if (msgAttachment != null) {
+					msgParams.putBoolean("showAttachment", true);
+				} else {
+					msgParams.putBoolean("showAttachment", false);
+				}
+				message = (MyMessageSupportSave) msg.obj;
+				// 添加到消息列表
+				mActivity.get().showMsg(message, senderIcon, msgAttachment,
+						false);
+				//
+				if (MyApplicationClass.userSettings.isPopupMsg()) {
+					// 显示/更新消息对话框
+					Intent messageDialogIntent = (messagePopupClosed ? new Intent(
+							mActivity.get(), MessageDialog.class)
+							: new Intent());
+					messageDialogIntent.putExtras(msgParams);
+					if (messagePopupClosed) {
+						// 声音提醒
+						if (MyApplicationClass.userSettings.isPlaySound()) {
+							MyApplicationClass.playSoundPool
+									.play(MyApplicationClass.ALERT_MSG ? MyApplicationClass.ALERT_SOUND
+											: MyApplicationClass.INFO_SOUND, 0);
+						}
+						// 显示消息对话框
+						mActivity.get().startActivity(messageDialogIntent);
+						messagePopupClosed = false;
+					} else {
+						// 更新消息对话框
+						messageDialogIntent.setAction(MY_CLASSNAME);
+						messageDialogIntent.putExtra("action", "update");
+						mActivity.get().sendBroadcast(messageDialogIntent);
+					}
+				}
+				break;
+			case MESSAGE_UPDATE_TIME:
+				// 更新消息生成时间
+				Date now = new Date();
+				for (int i = 0; i < mActivity.get().msgCount; i++) {
+					message = MyApplicationClass.latestMsgs.get(i);
+					View listItemView = mActivity.get().msg.getChildAt(i * 2);
+					TextView msgTimeView = (TextView) listItemView
+							.findViewById(R.id.msgTime);
+					String newMsgTime = mActivity.get().makeTimeString(now,
+							message.getGenerateTime());
+					if (!msgTimeView.getText().toString().equals(newMsgTime)) {
+						msgTimeView.setText(newMsgTime);
+					}
+				}
+				break;
+			default:
+				super.handleMessage(msg);
+			}
+		}
+	};
 }

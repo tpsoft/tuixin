@@ -95,7 +95,7 @@ public class DBManager {
 		}
 		return (updatedRows > 0);
 	}
-	
+
 	/**
 	 * hide message
 	 * 
@@ -127,7 +127,7 @@ public class DBManager {
 		db.delete("attachment", "messageId = ?",
 				new String[] { Long.toString(id) });
 		db.delete("message", "_id = ?", new String[] { Long.toString(id) });
-		
+
 		// TOOD ÇåÀí¸½¼þ
 	}
 
@@ -163,13 +163,16 @@ public class DBManager {
 	 */
 	public List<MyMessageSupportSave> queryMessages(Date after, int maxRecords) {
 		ArrayList<MyMessageSupportSave> messages = new ArrayList<MyMessageSupportSave>();
-		Cursor c = (after != null ? db.rawQuery(
-				"SELECT * FROM message WHERE (hidden is null or hidden=0) and generateTime>=? ORDER BY generateTime DESC"
-						+ (maxRecords > 0 ? " LIMIT 0," + maxRecords : ""),
-				new String[] { dateFormat.format(after) }) : db.rawQuery(
-				"SELECT * FROM message WHERE (hidden is null or hidden=0) ORDER BY generateTime DESC"
-						+ (maxRecords > 0 ? " LIMIT 0," + maxRecords : ""),
-				null));
+		Cursor c = (after != null ? db
+				.rawQuery(
+						"SELECT * FROM message WHERE (hidden is null or hidden=0) and generateTime>=? ORDER BY generateTime DESC"
+								+ (maxRecords > 0 ? " LIMIT 0," + maxRecords
+										: ""),
+						new String[] { dateFormat.format(after) })
+				: db.rawQuery(
+						"SELECT * FROM message WHERE (hidden is null or hidden=0) ORDER BY generateTime DESC"
+								+ (maxRecords > 0 ? " LIMIT 0," + maxRecords
+										: ""), null));
 		while (c.moveToNext()) {
 			MyMessageSupportSave message = new MyMessageSupportSave();
 			message.setRecordId(c.getLong(c.getColumnIndex("_id"))); // record
@@ -222,6 +225,28 @@ public class DBManager {
 			message.setAttachments(attachments.toArray(new Attachment[0]));
 		}
 		return messages;
+	}
+
+	/**
+	 * count messages, return integer
+	 * 
+	 * @param after
+	 *            null for all
+	 * @return int
+	 */
+	public int countMessages(Date after) {
+		Cursor c = (after != null ? db
+				.rawQuery(
+						"SELECT count(*) FROM message WHERE (hidden is null or hidden=0) and generateTime>=?",
+						new String[] { dateFormat.format(after) })
+				: db.rawQuery(
+						"SELECT count(*) FROM message WHERE (hidden is null or hidden=0)",
+						null));
+		c.moveToNext();
+		int result = c.getInt(0);
+		c.close();
+		//
+		return result;
 	}
 
 	/**

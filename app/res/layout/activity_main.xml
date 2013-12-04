@@ -40,11 +40,27 @@
                     android:background="@color/message_background_color" >
 
                     <LinearLayout
-                        android:id="@+id/msg"
                         android:layout_width="fill_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:textIsSelectable="true" />
+                        android:orientation="vertical" >
+
+                        <LinearLayout
+                            android:id="@+id/msg"
+                            android:layout_width="fill_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:textIsSelectable="true" />
+
+                        <Button
+                            android:id="@+id/btnMoreMsg"
+                            android:layout_width="fill_parent"
+                            android:layout_height="48dp"
+                            android:gravity="center"
+                            android:background="@color/msgmore_background"
+                            android:textColor="@color/msgmore_text"
+                            android:text="@string/msg_more"
+                            android:visibility="gone" />
+                    </LinearLayout>
                 </ScrollView>
             </LinearLayout>
 

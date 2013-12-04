@@ -10,7 +10,7 @@
     <string name="msg_time">消息时间</string>
     <string name="msg_first">已经是第一条消息了</string>
     <string name="msg_last">已经是最后一条消息了</string>
-
+    <string name="msg_more">更多(%s)&#8230;</string>
 
     <string name="msg_receiver">接收者(长按可选择联系人)</string>
     <string name="msg_receivers">最近联系人</string>
