@@ -165,70 +165,43 @@ public class DBManager {
 		ArrayList<MyMessageSupportSave> messages = new ArrayList<MyMessageSupportSave>();
 		Cursor c = (after != null ? db
 				.rawQuery(
-						"SELECT * FROM message WHERE (hidden is null or hidden=0) and generateTime>=? ORDER BY generateTime DESC"
+						"SELECT * FROM message WHERE (hidden is null or hidden=0) and generateTime>=? ORDER BY _id DESC"
 								+ (maxRecords > 0 ? " LIMIT 0," + maxRecords
 										: ""),
 						new String[] { dateFormat.format(after) })
 				: db.rawQuery(
-						"SELECT * FROM message WHERE (hidden is null or hidden=0) ORDER BY generateTime DESC"
+						"SELECT * FROM message WHERE (hidden is null or hidden=0) ORDER BY _id DESC"
 								+ (maxRecords > 0 ? " LIMIT 0," + maxRecords
 										: ""), null));
-		while (c.moveToNext()) {
-			MyMessageSupportSave message = new MyMessageSupportSave();
-			message.setRecordId(c.getLong(c.getColumnIndex("_id"))); // record
-																		// id,
-																		// not
-																		// msgid
-			message.setSender(c.getString(c.getColumnIndex("sender")));
-			message.setReceiver(c.getString(c.getColumnIndex("receiver")));
-			message.setTitle(c.getString(c.getColumnIndex("title")));
-			message.setBody(c.getString(c.getColumnIndex("body")));
-			message.setType(c.getString(c.getColumnIndex("type")));
-			message.setUrl(c.getString(c.getColumnIndex("url")));
-			String generateTime = c.getString(c.getColumnIndex("generateTime"));
-			if (generateTime != null && !generateTime.equals("")) {
-				try {
-					message.setGenerateTime(dateFormat.parse(generateTime));
-				} catch (ParseException e) {
-					e.printStackTrace();
-				}
-			}
-			String expiration = c.getString(c.getColumnIndex("expiration"));
-			if (expiration != null && !expiration.equals("")) {
-				try {
-					message.setExpiration(dateFormat.parse(expiration));
-				} catch (ParseException e) {
-					e.printStackTrace();
-				}
-			}
-			if (c.getColumnIndex("favorite") == -1)
-				message.setFavorite(false);
-			else
-				message.setFavorite(c.getLong(c.getColumnIndex("favorite")) != 0);
-			messages.add(message);
-		}
+		fetchMessages(messages, c);
 		c.close();
-		//
-		for (MyMessageSupportSave message : messages) {
-			c = db.rawQuery("SELECT * FROM attachment WHERE messageId=?",
-					new String[] { Long.toString(message.getRecordId()) });
-			List<Attachment> attachments = new ArrayList<Attachment>();
-			while (c.moveToNext()) {
-				Attachment attachment = new Attachment();
-				attachment.setTitle(c.getString(c.getColumnIndex("title")));
-				attachment.setType(c.getString(c.getColumnIndex("type")));
-				attachment
-						.setFilename(c.getString(c.getColumnIndex("filename")));
-				attachment.setUrl(c.getString(c.getColumnIndex("url")));
-				attachments.add(attachment);
-			}
-			message.setAttachments(attachments.toArray(new Attachment[0]));
-		}
 		return messages;
 	}
 
 	/**
-	 * count messages, return integer
+	 * query messages, return list
+	 * 
+	 * @param maxRecordId
+	 * @param maxRecords
+	 *            -1 for all
+	 * @return List<MyMessageSupportSave>
+	 */
+	public List<MyMessageSupportSave> queryMessages(long maxRecordId,
+			int maxRecords) {
+		ArrayList<MyMessageSupportSave> messages = new ArrayList<MyMessageSupportSave>();
+		Cursor c = db
+				.rawQuery(
+						"SELECT * FROM message WHERE (hidden is null or hidden=0) and _id<=? ORDER BY _id DESC"
+								+ (maxRecords > 0 ? " LIMIT 0," + maxRecords
+										: ""),
+						new String[] { Long.toString(maxRecordId) });
+		fetchMessages(messages, c);
+		c.close();
+		return messages;
+	}
+
+	/**
+	 * count messages by date, return integer
 	 * 
 	 * @param after
 	 *            null for all
@@ -242,6 +215,24 @@ public class DBManager {
 				: db.rawQuery(
 						"SELECT count(*) FROM message WHERE (hidden is null or hidden=0)",
 						null));
+		c.moveToNext();
+		int result = c.getInt(0);
+		c.close();
+		//
+		return result;
+	}
+
+	/**
+	 * count messages by id, return integer
+	 * 
+	 * @param maxRecordId
+	 * @return int
+	 */
+	public int countMessages(long maxRecordId) {
+		Cursor c = db
+				.rawQuery(
+						"SELECT count(*) FROM message WHERE (hidden is null or hidden=0) and _id<=?",
+						new String[] { Long.toString(maxRecordId) });
 		c.moveToNext();
 		int result = c.getInt(0);
 		c.close();
@@ -324,5 +315,61 @@ public class DBManager {
 	 */
 	public void closeDB() {
 		db.close();
+	}
+
+	private void fetchMessages(ArrayList<MyMessageSupportSave> messages,
+			Cursor c) {
+		while (c.moveToNext()) {
+			MyMessageSupportSave message = new MyMessageSupportSave();
+			message.setRecordId(c.getLong(c.getColumnIndex("_id"))); // record
+																		// id,
+																		// not
+																		// msgid
+			message.setSender(c.getString(c.getColumnIndex("sender")));
+			message.setReceiver(c.getString(c.getColumnIndex("receiver")));
+			message.setTitle(c.getString(c.getColumnIndex("title")));
+			message.setBody(c.getString(c.getColumnIndex("body")));
+			message.setType(c.getString(c.getColumnIndex("type")));
+			message.setUrl(c.getString(c.getColumnIndex("url")));
+			String generateTime = c.getString(c.getColumnIndex("generateTime"));
+			if (generateTime != null && !generateTime.equals("")) {
+				try {
+					message.setGenerateTime(dateFormat.parse(generateTime));
+				} catch (ParseException e) {
+					e.printStackTrace();
+				}
+			}
+			String expiration = c.getString(c.getColumnIndex("expiration"));
+			if (expiration != null && !expiration.equals("")) {
+				try {
+					message.setExpiration(dateFormat.parse(expiration));
+				} catch (ParseException e) {
+					e.printStackTrace();
+				}
+			}
+			if (c.getColumnIndex("favorite") == -1)
+				message.setFavorite(false);
+			else
+				message.setFavorite(c.getLong(c.getColumnIndex("favorite")) != 0);
+			messages.add(message);
+		}
+		//
+		for (MyMessageSupportSave message : messages) {
+			Cursor c2 = db.rawQuery(
+					"SELECT * FROM attachment WHERE messageId=?",
+					new String[] { Long.toString(message.getRecordId()) });
+			List<Attachment> attachments = new ArrayList<Attachment>();
+			while (c2.moveToNext()) {
+				Attachment attachment = new Attachment();
+				attachment.setTitle(c2.getString(c2.getColumnIndex("title")));
+				attachment.setType(c2.getString(c2.getColumnIndex("type")));
+				attachment.setFilename(c2.getString(c2
+						.getColumnIndex("filename")));
+				attachment.setUrl(c2.getString(c2.getColumnIndex("url")));
+				attachments.add(attachment);
+			}
+			c2.close();
+			message.setAttachments(attachments.toArray(new Attachment[0]));
+		}
 	}
 }

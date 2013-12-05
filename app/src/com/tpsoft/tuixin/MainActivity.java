@@ -122,6 +122,7 @@ public class MainActivity extends TabActivity implements
 	private PopupWindow popupWindow;
 
 	private DBManager db;
+	private long loadedMinRecordId; // 已加载过的消息的最小记录ID
 
 	private Bitmap favoriteFlag;
 
@@ -219,12 +220,43 @@ public class MainActivity extends TabActivity implements
 		int msgTotalCount = db.countMessages(null);
 		int leftMsgCount = msgTotalCount - messages.size();
 		if (leftMsgCount > 0) {
+			loadedMinRecordId = messages.get(messages.size() - 1).getRecordId();
+			//
 			btnMoreMsg.setText(String.format(
 					getText(R.string.msg_more).toString(),
 					(leftMsgCount <= LOAD_MSG_COUNT ? Integer
 							.toString(leftMsgCount) : (String.format("%d/%d",
 							LOAD_MSG_COUNT, leftMsgCount)))));
 			btnMoreMsg.setVisibility(View.VISIBLE);
+			//
+			btnMoreMsg.setOnClickListener(new View.OnClickListener() {
+
+				@Override
+				public void onClick(View v) {
+					// TODO 加载更多(更早的)消息
+					List<MyMessageSupportSave> messages = db.queryMessages(
+							loadedMinRecordId - 1, LOAD_MSG_COUNT);
+					for (MyMessageSupportSave message : messages) {
+						message.setMessageId(MyApplicationClass.nextMsgId++);
+					}
+					MyApplicationClass.latestMsgs.addAll(messages);
+					showMessages(messages);
+					//
+					loadedMinRecordId = messages.get(messages.size() - 1)
+							.getRecordId();
+					int leftMsgCount = db.countMessages(loadedMinRecordId - 1);
+					if (leftMsgCount == 0) {
+						btnMoreMsg.setVisibility(View.GONE);
+					} else {
+						btnMoreMsg.setText(String.format(
+								getText(R.string.msg_more).toString(),
+								(leftMsgCount <= LOAD_MSG_COUNT ? Integer
+										.toString(leftMsgCount) : (String
+										.format("%d/%d", LOAD_MSG_COUNT,
+												leftMsgCount)))));
+					}
+				}
+			});
 		}
 	}
 
